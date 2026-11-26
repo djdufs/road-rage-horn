@@ -933,12 +933,17 @@ function drawVillain(t, def){
       break;
     }
     case 'school': {
-      drawCar(cx+W*0.02*s, gy*1.005, cw*1.02, '#e0e4ea', {brake:true, plate:'서울 99사 1212'});
-      const walk = Math.sin(t*1.7);
+      // 앞차는 횡단보도(z 0.50~0.62)보다 먼 곳에 작게 세운다 — 어린이가 차 위에 겹치지 않는다
+      const carZ = 0.44;
+      drawCar(cx - W*0.085*sAt(carZ), yAt(carZ), W*0.46*sAt(carZ), '#e0e4ea', {brake:true, plate:'서울 99사 1212'});
       drawSchoolSign(W*0.905, H*0.86, H*0.20);
-      drawPerson(W*0.40 + walk*W*0.05, yAt(0.63), H*0.10, '#ff6b6b', t*7);
-      drawPerson(W*0.46 + walk*W*0.05, yAt(0.66), H*0.085, '#4dabf7', t*7+1.4);
-      drawPerson(W*0.56 + walk*W*0.05, yAt(0.70), H*0.115, '#ffd43b', t*7+2.6);
+      // 어린이 3명: 횡단보도 위를 왼쪽에서 오른쪽으로 계속 건넌다 (발높이 = 횡단보도 높이)
+      const kidColors = ['#ff6b6b','#4dabf7','#ffd43b'];
+      for(let i=0;i<3;i++){
+        const kz = 0.545 + i*0.030;
+        const f = mod(t*0.055 + i/3, 1);
+        drawPerson(W*(-0.03 + f*0.90), yAt(kz), H*0.205*sAt(kz), kidColors[i], t*7 + i*1.4);
+      }
       break;
     }
     case 'walker': {
@@ -1072,7 +1077,9 @@ function beginRound(key){
   const def = V[key];
   G.roundCount++;
   const sp = speedScale();
+  clearTapPending();
   G.round = {key:key, def:def, t0:now(), win:def.win*sp, resolved:false};
+  el.cueBar.style.width = def.trap ? '0%' : '100%';
   scene.key = key;
   scene.def = def;
   scene.t0 = now();
@@ -1210,7 +1217,12 @@ function endFever(){
 const HOLD_MS = 330;
 const TAP_WINDOW = 420;
 const Press = {active:false, t0:0, longFired:false, timer:0};
-const Taps = {times:[], timer:0};
+const Taps = {times:[], timer:0, pending:false};
+// 연타 판정 대기열을 확실히 비운다 (timer id만 남겨두면 이후 타이머 판정이 영영 막힌다)
+function clearTapPending(){
+  if(Taps.timer){ clearTimeout(Taps.timer); Taps.timer = 0; }
+  Taps.pending = false; Taps.times = [];
+}
 const hornEl = $('#horn');
 const holdRing = $('#holdRing');
 
@@ -1306,14 +1318,14 @@ function hornUp(e){
   if(Taps.times.length === 1){
     Sound.horn('tap');
     feedback('tap');
-    clearTimeout(Taps.timer);
+    clearTapPending();
+    Taps.pending = true;
     Taps.timer = setTimeout(function(){
-      Taps.times = [];
+      Taps.timer = 0; Taps.pending = false; Taps.times = [];
       judge('tap');
     }, 340);
   } else {
-    clearTimeout(Taps.timer);
-    Taps.times = [];
+    clearTapPending();
     Sound.horn('tap2');
     feedback('double');
     judge('double');
@@ -1372,8 +1384,12 @@ function loop(ts){
     if(G.fever && ts>G.feverUntil) endFever();
 
     const r = G.round;
+    if(r && !r.resolved){
+      // 함정 스테이지: 남은 참기 시간을 게이지로 보여준다
+      if(r.def.trap) el.cueBar.style.width = (clamp((now()-r.t0)/r.win,0,1)*100).toFixed(1)+'%';
+    }
     if(r && !r.resolved && now()-r.t0 > r.win){
-      if(!Taps.timer){
+      if(!Taps.pending){
         r.resolved = true;
         if(r.def.trap){
           G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo); G.hits++;
@@ -1408,7 +1424,7 @@ function startMode(mode){
   Sound.resume(); Sound.ui(660);
   G.gen++;
   clearPending();
-  clearTimeout(Taps.timer); Taps.times=[];
+  clearTapPending();
   Sound.stopLong();
   G.mode = mode; G.running = true;
   G.round=null; G.roundCount=0; G.score=0; G.combo=0; G.maxCombo=0;
@@ -1444,7 +1460,7 @@ function endMode(reason){
   G.running = false;
   G.round = null;
   clearPending();
-  clearTimeout(Taps.timer); Taps.times=[];
+  clearTapPending();
   Sound.stopLong();
   hideCue();
 
