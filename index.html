@@ -1060,9 +1060,9 @@ function speedScale(){
   if(G.mode==='A') return 1;
   if(G.mode==='B'){
     const prog = 1 - clamp(G.timeLeft/60,0,1);
-    return 1 - 0.42*prog;
+    return 1 - 0.30*prog;
   }
-  return Math.max(0.42, 1 - G.roundCount*0.016);
+  return Math.max(0.55, 1 - G.roundCount*0.012);
 }
 
 function beginRound(key){
