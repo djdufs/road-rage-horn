@@ -20,13 +20,13 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 
 /* ---------- title ---------- */
 #title{padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 14px);
-  justify-content:space-between;gap:10px}
+  justify-content:center;gap:22px}
 .brand{text-align:center}
 .badge{font-size:38px;line-height:1;filter:drop-shadow(0 6px 14px rgba(255,59,78,.35))}
 .brand h1{margin:6px 0 2px;font-size:31px;letter-spacing:-1px;font-weight:900}
 .brand h1 em{font-style:normal;color:#ff4159;text-shadow:0 0 18px rgba(255,65,89,.55)}
 .brand .sub{margin:0;font-size:12.5px;color:#8e9ab3;letter-spacing:.2px}
-.modes{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1 1 auto;min-height:0}
+.modes{display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
 .mode{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;gap:1px 10px;
   align-items:center;text-align:left;padding:12px 14px;border-radius:16px;
   background:linear-gradient(180deg,#1b2233,#151a26);border:1px solid #2a3346;
@@ -40,6 +40,8 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .mode{position:relative}
 .mode[data-mode="B"] .tag{color:#ff5da2;border-color:rgba(255,93,162,.5);background:rgba(255,93,162,.09)}
 .mode[data-mode="C"] .tag{color:#5ad2ff;border-color:rgba(90,210,255,.5);background:rgba(90,210,255,.09)}
+#titleBottom{position:absolute;left:18px;right:18px;bottom:calc(env(safe-area-inset-bottom) + 14px);
+  display:flex;flex-direction:column;gap:9px}
 .titleFoot{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#8e9ab3;padding:0 4px;flex:0 0 auto}
 .mini{border:1px solid #2a3346;background:#151a26;border-radius:999px;padding:6px 11px;font-size:11.5px;color:#c6d0e2}
 .hintline{text-align:center;font-size:10.5px;color:#5f6a80;line-height:1.5}
@@ -215,11 +217,13 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
         <span class="tag">최고기록</span>
       </button>
     </div>
-    <div class="titleFoot">
-      <span id="bestLabel">🏆 최고 0</span>
-      <button id="muteBtn" class="mini">🔊 소리 켜짐</button>
+    <div id="titleBottom">
+      <div class="titleFoot">
+        <span id="bestLabel">🏆 최고 0</span>
+        <button id="muteBtn" class="mini">🔊 소리 켜짐</button>
+      </div>
+      <div class="hintline">톡 = 매너빵 · 톡톡 = 연타빵 · 꾸욱 = 롱빵<br>스쿨존·보행자는 참아야 합니다</div>
     </div>
-    <div class="hintline">톡 = 매너빵 · 톡톡 = 연타빵 · 꾸욱 = 롱빵<br>스쿨존·보행자는 참아야 합니다</div>
   </section>
 
   <!-- ============ GAME ============ -->
