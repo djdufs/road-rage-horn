@@ -26,7 +26,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .brand h1{margin:6px 0 2px;font-size:31px;letter-spacing:-1px;font-weight:900}
 .brand h1 em{font-style:normal;color:#ff4159;text-shadow:0 0 18px rgba(255,65,89,.55)}
 .brand .sub{margin:0;font-size:12.5px;color:#8e9ab3;letter-spacing:.2px}
-.modes{display:flex;flex-direction:column;gap:9px}
+.modes{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1 1 auto;min-height:0}
 .mode{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;gap:1px 10px;
   align-items:center;text-align:left;padding:12px 14px;border-radius:16px;
   background:linear-gradient(180deg,#1b2233,#151a26);border:1px solid #2a3346;
@@ -40,7 +40,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .mode{position:relative}
 .mode[data-mode="B"] .tag{color:#ff5da2;border-color:rgba(255,93,162,.5);background:rgba(255,93,162,.09)}
 .mode[data-mode="C"] .tag{color:#5ad2ff;border-color:rgba(90,210,255,.5);background:rgba(90,210,255,.09)}
-.titleFoot{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#8e9ab3;padding:0 4px}
+.titleFoot{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#8e9ab3;padding:0 4px;flex:0 0 auto}
 .mini{border:1px solid #2a3346;background:#151a26;border-radius:999px;padding:6px 11px;font-size:11.5px;color:#c6d0e2}
 .hintline{text-align:center;font-size:10.5px;color:#5f6a80;line-height:1.5}
 
@@ -118,7 +118,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 .mtrack i{display:block;height:100%;width:0%;border-radius:99px;transition:width .12s linear}
 #angerBar{background:linear-gradient(90deg,#ffd23e,#ff8a3d,#ff2d55)}
 #dbBar{background:linear-gradient(90deg,#33d68a,#7fe8ff,#5ad2ff)}
-#dbPeak{position:absolute;right:5px;top:-1px;font-size:8.5px;font-weight:800;color:#8fb8c9;letter-spacing:.3px}
+#dbPeak{font-size:9px;font-weight:800;color:#8fb8c9;letter-spacing:.2px;width:30px;text-align:right;flex:0 0 auto}
 #wheelWrap{position:relative;height:208px;margin-top:-2px;overflow:hidden}
 #wheel{position:absolute;left:50%;bottom:-40px;margin-left:-120px;width:240px;height:240px;border-radius:50%;
   background:radial-gradient(circle at 50% 32%,#2b3348 0%,#1c2434 46%,#12171f 74%,#0a0d13 100%);
@@ -254,7 +254,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
     <div id="controls">
       <div id="meters">
         <div class="meter"><span class="mlab">분노</span><div class="mtrack"><i id="angerBar"></i></div></div>
-        <div class="meter"><span class="mlab">dB</span><div class="mtrack"><i id="dbBar"></i><b id="dbPeak">0dB</b></div></div>
+        <div class="meter"><span class="mlab">dB</span><div class="mtrack"><i id="dbBar"></i></div><b id="dbPeak">0dB</b></div>
       </div>
       <div id="wheelWrap">
         <div id="wheel">
@@ -665,9 +665,9 @@ function drawCar(x, gy, w, color, o){
   ctx2.fillStyle=shade(color,0.55);
   rr(-w*0.46, -bodyH*0.24, w*0.92, bodyH*0.20, 4); ctx2.fill();
   ctx2.fillStyle='#e9eef5';
-  rr(-w*0.13, -bodyH*0.24+1, w*0.26, bodyH*0.15, 2); ctx2.fill();
+  rr(-w*0.17, -bodyH*0.24+1, w*0.34, bodyH*0.15, 2); ctx2.fill();
   ctx2.fillStyle='#1b2434';
-  ctx2.font = '700 ' + Math.max(6, w*0.062) + 'px system-ui, sans-serif';
+  ctx2.font = '700 ' + Math.max(5, w*0.050) + 'px system-ui, sans-serif';
   ctx2.textAlign='center'; ctx2.textBaseline='middle';
   ctx2.fillText(o.plate || '12가 3456', 0, -bodyH*0.24 + bodyH*0.085);
 
@@ -1003,7 +1003,7 @@ function updateHud(){
     el.hudRight.textContent = Math.max(0,G.timeLeft).toFixed(1)+'s';
     el.barFill.style.width = clamp(G.timeLeft/60,0,1)*100+'%';
   } else {
-    el.hudRight.textContent = G.roundCount+'빌런';
+    el.hudRight.textContent = '빌런 ' + G.roundCount;
     el.barFill.style.width = clamp(G.score/3000,0,1)*100+'%';
   }
   el.cAnger.innerHTML = '😤 <b>'+Math.round(G.anger)+'</b>';
@@ -1202,10 +1202,18 @@ function endFever(){
 
 /* ---------------------------------------------------------------- input */
 const HOLD_MS = 330;
+const TAP_WINDOW = 420;
 const Press = {active:false, t0:0, longFired:false, timer:0};
 const Taps = {times:[], timer:0};
 const hornEl = $('#horn');
 const holdRing = $('#holdRing');
+
+// 하나의 연타 묶음에 속하는 탭 시각만 남긴다 (TAP_WINDOW 안의 탭은 같은 제스처)
+function tapGroup(times, t){
+  const kept = times.filter(function(x){ return t - x < TAP_WINDOW; });
+  kept.push(t);
+  return kept;
+}
 
 function feedback(kind){
   G.honks++;
@@ -1276,8 +1284,7 @@ function hornUp(e){
   }
   // tap sequence
   const t = now();
-  Taps.times = Taps.times.filter(function(x){ return t-x < 420; });
-  Taps.times.push(t);
+  Taps.times = tapGroup(Taps.times, t);
   if(Taps.times.length === 1){
     Sound.horn('tap');
     feedback('tap');
