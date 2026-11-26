@@ -150,6 +150,8 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
 @keyframes holdFill{from{opacity:.0;transform:scale(1.16)}60%{opacity:.9;transform:scale(1.0)}to{opacity:1;transform:scale(.96)}}
 #legend{text-align:center;font-size:10.5px;color:#69748c;margin-top:-2px;letter-spacing:.1px}
 #legend b{color:#aeb9cd}
+#keyhint{display:block;font-size:9.5px;color:#4f5a70;margin-top:1px}
+#keyhint:empty{display:none}
 
 /* ---------- result ---------- */
 #result{padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 14px);
@@ -271,7 +273,7 @@ button{font-family:inherit;color:inherit;border:0;background:none;padding:0;curs
           </button>
         </div>
       </div>
-      <div id="legend"><b>톡</b> 매너빵 · <b>톡톡</b> 연타빵 · <b>꾸욱</b> 롱빵</div>
+      <div id="legend"><b>톡</b> 매너빵 · <b>톡톡</b> 연타빵 · <b>꾸욱</b> 롱빵<span id="keyhint"></span></div>
     </div>
   </section>
 
@@ -1229,6 +1231,18 @@ function feedback(kind){
   updateHud();
 }
 
+// 키보드·테스트에서 바로 쓰는 단일 제스처 실행 (터치 판별을 거치지 않는 직접 입력)
+function triggerGesture(kind){
+  if(kind === 'long'){
+    Sound.horn('long');
+    setTimeout(function(){ Sound.stopLong(); }, 420);
+  } else {
+    Sound.horn(kind === 'double' ? 'double' : 'tap');
+  }
+  feedback(kind);
+  judge(kind);
+}
+
 function judge(gesture){
   const t = now();
   const r = G.round;
@@ -1323,13 +1337,18 @@ hornEl.addEventListener('pointercancel', function(e){
 hornEl.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 document.addEventListener('dblclick', function(e){ e.preventDefault(); }, {passive:false});
 
-// keyboard: Space = horn (desktop)
+// keyboard: Space = horn (누루고 있으면 롱빵), 1/2/3 = 매너·연타·롱 직행
 document.addEventListener('keydown', function(e){
   if(e.target && e.target.tagName==='INPUT') return;
   if(e.code==='Space' || e.key===' '){
     e.preventDefault();
     if(!e.repeat) hornDown(null);
+    return;
   }
+  if(e.repeat) return;
+  if(e.key==='1'){ e.preventDefault(); triggerGesture('tap'); }
+  else if(e.key==='2'){ e.preventDefault(); triggerGesture('double'); }
+  else if(e.key==='3'){ e.preventDefault(); triggerGesture('long'); }
 });
 document.addEventListener('keyup', function(e){
   if(e.target && e.target.tagName==='INPUT') return;
@@ -1568,6 +1587,7 @@ document.addEventListener('touchstart', function(){ Sound.resume(); }, {passive:
 paintMute();
 updateBestLabel();
 resizeCanvas();
+if(!('ontouchstart' in window)){ $('#keyhint').textContent = 'PC: Space 경적 · 1 매너빵 · 2 연타빵 · 3 롱빵'; }
 
 /* debug hook (read-only inspection) */
 window.__rrh = {G:G, scene:scene, V:V, sound:Sound, version:'1.0'};
