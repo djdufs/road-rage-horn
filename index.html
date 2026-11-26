@@ -13,7 +13,7 @@ html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#07080d;colo
   touch-action:manipulation;overscroll-behavior:none;
   -webkit-user-select:none;user-select:none;-webkit-text-size-adjust:100%}
 button{font-family:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
-#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;
+#app{position:fixed;top:0;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,520px);display:flex;flex-direction:column;overflow:hidden;
   background:radial-gradient(120% 80% at 50% 0%,#1a2033 0%,#0b0d14 60%)}
 .screen{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
 .screen.on{display:flex}
@@ -1301,6 +1301,19 @@ hornEl.addEventListener('pointercancel', function(e){
 });
 hornEl.addEventListener('contextmenu', function(e){ e.preventDefault(); });
 document.addEventListener('dblclick', function(e){ e.preventDefault(); }, {passive:false});
+
+// keyboard: Space = horn (desktop)
+document.addEventListener('keydown', function(e){
+  if(e.target && e.target.tagName==='INPUT') return;
+  if(e.code==='Space' || e.key===' '){
+    e.preventDefault();
+    if(!e.repeat) hornDown(null);
+  }
+});
+document.addEventListener('keyup', function(e){
+  if(e.target && e.target.tagName==='INPUT') return;
+  if(e.code==='Space' || e.key===' '){ e.preventDefault(); hornUp(null); }
+});
 
 /* ---------------------------------------------------------------- loop */
 let lastT = 0, rafId = 0;
