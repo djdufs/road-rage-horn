@@ -1,0 +1,1545 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d14">
+<meta name="description" content="운전하다 개빡치는 상황에 경적을 울려 스트레스를 푸는 모바일 웹게임">
+<title>빵빵! 클락션 — 운전 스트레스 해소</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#07080d;color:#fff;
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  touch-action:manipulation;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-text-size-adjust:100%}
+button{font-family:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;overflow:hidden;
+  background:radial-gradient(120% 80% at 50% 0%,#1a2033 0%,#0b0d14 60%)}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;min-height:0}
+.screen.on{display:flex}
+
+/* ---------- title ---------- */
+#title{padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 14px);
+  justify-content:space-between;gap:10px}
+.brand{text-align:center}
+.badge{font-size:38px;line-height:1;filter:drop-shadow(0 6px 14px rgba(255,59,78,.35))}
+.brand h1{margin:6px 0 2px;font-size:31px;letter-spacing:-1px;font-weight:900}
+.brand h1 em{font-style:normal;color:#ff4159;text-shadow:0 0 18px rgba(255,65,89,.55)}
+.brand .sub{margin:0;font-size:12.5px;color:#8e9ab3;letter-spacing:.2px}
+.modes{display:flex;flex-direction:column;gap:9px}
+.mode{display:grid;grid-template-columns:44px 1fr;grid-template-rows:auto auto;gap:1px 10px;
+  align-items:center;text-align:left;padding:12px 14px;border-radius:16px;
+  background:linear-gradient(180deg,#1b2233,#151a26);border:1px solid #2a3346;
+  box-shadow:0 6px 16px rgba(0,0,0,.35);transition:transform .08s ease, border-color .15s}
+.mode:active{transform:scale(.975);border-color:#ff4159}
+.mode .mi{grid-row:1/3;font-size:26px;text-align:center}
+.mode .mt{font-size:15.5px;font-weight:800;letter-spacing:-.3px}
+.mode .md{font-size:11.5px;color:#8e9ab3}
+.mode .tag{position:absolute;right:14px;top:12px;font-size:9.5px;font-weight:700;color:#ffb23e;
+  border:1px solid rgba(255,178,62,.45);border-radius:999px;padding:2px 7px;background:rgba(255,178,62,.08)}
+.mode{position:relative}
+.mode[data-mode="B"] .tag{color:#ff5da2;border-color:rgba(255,93,162,.5);background:rgba(255,93,162,.09)}
+.mode[data-mode="C"] .tag{color:#5ad2ff;border-color:rgba(90,210,255,.5);background:rgba(90,210,255,.09)}
+.titleFoot{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:#8e9ab3;padding:0 4px}
+.mini{border:1px solid #2a3346;background:#151a26;border-radius:999px;padding:6px 11px;font-size:11.5px;color:#c6d0e2}
+.hintline{text-align:center;font-size:10.5px;color:#5f6a80;line-height:1.5}
+
+/* ---------- game ---------- */
+#game{padding-top:env(safe-area-inset-top)}
+#hud{display:flex;align-items:center;gap:9px;padding:8px 12px 7px;flex:0 0 auto}
+.iconBtn{width:32px;height:32px;border-radius:10px;background:#161c29;border:1px solid #28324a;
+  display:flex;align-items:center;justify-content:center;font-size:14px;flex:0 0 auto}
+.hudMid{flex:1;min-width:0}
+.hudTop{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:#95a1b8;margin-bottom:4px}
+.hudTop b{font-size:12.5px;color:#fff;letter-spacing:-.2px}
+.bar{height:6px;border-radius:99px;background:#1c2331;overflow:hidden;border:1px solid #232c3f}
+.bar i{display:block;height:100%;width:0%;border-radius:99px;
+  background:linear-gradient(90deg,#ff8a3d,#ff3b4e);transition:width .25s ease}
+#chips{display:flex;gap:6px;padding:0 12px 6px;flex-wrap:wrap;flex:0 0 auto}
+.chip{font-size:11px;padding:3.5px 8px;border-radius:99px;background:#141a26;border:1px solid #242e42;color:#a9b5c9}
+.chip b{color:#fff;font-size:12px}
+.chip.hot{border-color:rgba(255,65,89,.6);background:rgba(255,65,89,.12);color:#ffb9c2}
+.chip.fever{border-color:rgba(255,178,62,.75);background:rgba(255,178,62,.15);color:#ffd79a}
+.hide{display:none!important}
+
+#stage{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;background:#0d1420}
+#road{position:absolute;inset:0;width:100%;height:100%;display:block}
+#glass{position:absolute;inset:0;pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,0) 26%,rgba(255,255,255,0) 62%,rgba(255,255,255,.06) 100%),
+    radial-gradient(120% 90% at 50% 45%,rgba(0,0,0,0) 45%,rgba(4,7,14,.55) 100%)}
+#cue{position:absolute;left:50%;top:9px;transform:translateX(-50%);max-width:calc(100% - 20px);
+  display:flex;align-items:center;gap:7px;padding:7px 13px 7px 11px;border-radius:99px;
+  background:rgba(10,14,24,.82);border:1px solid #35405a;backdrop-filter:blur(6px);
+  font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;
+  box-shadow:0 8px 20px rgba(0,0,0,.45);transition:opacity .2s}
+#cue.warn{border-color:#ff4159;background:rgba(58,10,20,.86);color:#ffd2d8;animation:warnPulse .9s infinite}
+#cue.go{border-color:#33d68a;color:#c6ffe4}
+#cue .ci{font-size:14px}
+#cueBar{position:absolute;left:0;bottom:0;height:2px;background:#ff4159;width:100%;border-radius:0 0 99px 99px}
+@keyframes warnPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,65,89,.0)}50%{box-shadow:0 0 0 5px rgba(255,65,89,.18)}}
+#bubbles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.bub{position:absolute;top:34%;left:20%;max-width:74%;padding:7px 11px;border-radius:12px;
+  background:rgba(255,255,255,.95);color:#111823;font-size:12px;font-weight:800;letter-spacing:-.2px;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);animation:bubIn .28s ease both}
+.bub:after{content:'';position:absolute;left:16px;bottom:-6px;width:0;height:0;
+  border:7px solid transparent;border-top-color:rgba(255,255,255,.95);border-bottom:0}
+.bub.bad{background:#ffd9dd;color:#8c0e22}
+.bub.bad:after{border-top-color:#ffd9dd}
+.bub.good{background:#d8ffe9;color:#075c37}
+.bub.good:after{border-top-color:#d8ffe9}
+.bub.out{animation:bubOut .35s ease both}
+@keyframes bubIn{from{opacity:0;transform:translateY(8px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes bubOut{to{opacity:0;transform:translateY(-14px)}}
+#honkLayer{position:absolute;inset:0;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.honkfx{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+  font-size:34px;font-weight:900;letter-spacing:-1px;color:#fff;
+  text-shadow:0 0 22px rgba(255,65,89,.9),0 4px 0 rgba(0,0,0,.35);animation:honkPop .9s ease-out both}
+.honkfx.double{color:#ffe14d;font-size:30px}
+.honkfx.long{color:#7fe8ff;font-size:32px}
+@keyframes honkPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.6)}25%{opacity:1;transform:translate(-50%,-50%) scale(1.08)}
+  70%{opacity:1;transform:translate(-50%,-70%) scale(1)}100%{opacity:0;transform:translate(-50%,-95%) scale(.95)}}
+#feverBand{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,#ff8a3d,#ff2d55,#ffd23e,#ff8a3d);
+  background-size:200% 100%;opacity:0;transition:opacity .25s}
+#feverBand.on{opacity:1;animation:feverRun .9s linear infinite}
+@keyframes feverRun{to{background-position:200% 0}}
+#feverTint{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(120% 90% at 50% 100%,rgba(255,60,90,.30),rgba(255,60,90,0) 62%)}
+#feverTint.on{opacity:1}
+#flash{position:absolute;inset:0;pointer-events:none;background:#fff;opacity:0}
+
+/* ---------- controls ---------- */
+#controls{flex:0 0 auto;position:relative;padding:8px 14px calc(env(safe-area-inset-bottom) + 8px);
+  background:linear-gradient(180deg,#0f1420 0%,#0a0d15 100%);border-top:1px solid #1b2333}
+#meters{display:flex;gap:12px;margin-bottom:4px}
+.meter{flex:1;display:flex;align-items:center;gap:6px}
+.mlab{font-size:9.5px;font-weight:800;color:#7c88a0;letter-spacing:.4px;width:22px;flex:0 0 auto}
+.mtrack{position:relative;flex:1;height:8px;border-radius:99px;background:#161c29;border:1px solid #232c3f;overflow:hidden}
+.mtrack i{display:block;height:100%;width:0%;border-radius:99px;transition:width .12s linear}
+#angerBar{background:linear-gradient(90deg,#ffd23e,#ff8a3d,#ff2d55)}
+#dbBar{background:linear-gradient(90deg,#33d68a,#7fe8ff,#5ad2ff)}
+#dbPeak{position:absolute;right:5px;top:-1px;font-size:8.5px;font-weight:800;color:#8fb8c9;letter-spacing:.3px}
+#wheelWrap{position:relative;height:208px;margin-top:-2px;overflow:hidden}
+#wheel{position:absolute;left:50%;bottom:-40px;margin-left:-120px;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle at 50% 32%,#2b3348 0%,#1c2434 46%,#12171f 74%,#0a0d13 100%);
+  border:2px solid #2c364c;
+  box-shadow:inset 0 10px 24px rgba(255,255,255,.05),inset 0 -18px 40px rgba(0,0,0,.75),0 -8px 24px rgba(0,0,0,.5)}
+#wheel:before,#wheel:after{content:'';position:absolute;left:50%;top:18%;width:26px;height:33%;border-radius:8px;
+  background:linear-gradient(180deg,#2f3a52,#1a2130);transform:translateX(-50%);opacity:.9}
+#wheel:after{top:auto;bottom:8%;height:14%}
+.spoke{position:absolute;top:47%;height:24px;width:40%;border-radius:10px;
+  background:linear-gradient(180deg,#323d55,#1b2230);}
+.spoke.l{left:2%;transform:rotate(18deg);transform-origin:right center}
+.spoke.r{right:2%;transform:rotate(-18deg);transform-origin:left center}
+#horn{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:118px;height:118px;border-radius:50%;
+  background:radial-gradient(circle at 50% 30%,#ff6a7a 0%,#ff2d46 42%,#c00f28 100%);
+  border:3px solid rgba(255,255,255,.22);
+  box-shadow:0 12px 28px rgba(255,45,70,.42),inset 0 -8px 20px rgba(120,0,15,.7),inset 0 8px 16px rgba(255,255,255,.28);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  touch-action:none;-webkit-user-select:none;user-select:none;transition:transform .06s ease,box-shadow .1s}
+#horn .hi{font-size:31px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}
+#horn .ht{font-size:12px;font-weight:900;letter-spacing:1px;color:#fff8f9;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+#horn.dn{transform:translate(-50%,-50%) scale(.94);
+  box-shadow:0 4px 14px rgba(255,45,70,.5),inset 0 6px 18px rgba(100,0,12,.85)}
+#horn.hold{animation:none}
+#holdRing{position:absolute;left:50%;top:46%;width:134px;height:134px;margin:-67px 0 0 -67px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.85);opacity:0;pointer-events:none}
+#holdRing.go{animation:holdFill .32s linear forwards}
+@keyframes holdFill{from{opacity:.0;transform:scale(1.16)}60%{opacity:.9;transform:scale(1.0)}to{opacity:1;transform:scale(.96)}}
+#legend{text-align:center;font-size:10.5px;color:#69748c;margin-top:-2px;letter-spacing:.1px}
+#legend b{color:#aeb9cd}
+
+/* ---------- result ---------- */
+#result{padding:calc(env(safe-area-inset-top) + 16px) 18px calc(env(safe-area-inset-bottom) + 14px);
+  justify-content:center;gap:12px;overflow:hidden}
+.resTop{text-align:center}
+.resBig{font-size:62px;font-weight:900;line-height:1;letter-spacing:-3px;
+  background:linear-gradient(180deg,#fff,#ff8a9a);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 6px 18px rgba(255,65,89,.35))}
+.resBig.rank{font-size:86px}
+.resTitle{font-size:16px;font-weight:800;margin:6px 0 2px}
+.resSub{font-size:11.5px;color:#8e9ab3;line-height:1.5}
+.resStats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0}
+.rs{background:#151b28;border:1px solid #242e42;border-radius:13px;padding:9px 11px}
+.rs .k{font-size:10px;color:#7c88a0;font-weight:700}
+.rs .v{font-size:16px;font-weight:900;margin-top:2px}
+.rankBox{background:#121824;border:1px solid #232d40;border-radius:14px;padding:10px 12px}
+.rankHead{display:flex;justify-content:space-between;font-size:10.5px;color:#7c88a0;font-weight:800;margin-bottom:6px}
+.rankRow{display:flex;align-items:center;gap:8px;font-size:12px;padding:3.5px 0;border-bottom:1px dashed #1e2739}
+.rankRow:last-child{border:0}
+.rankRow .no{width:16px;color:#7c88a0;font-weight:800;font-size:10.5px}
+.rankRow .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+.rankRow .sc{font-weight:900;color:#ffd23e}
+.rankRow.me{background:rgba(255,65,89,.12);border-radius:8px;padding-left:4px;padding-right:4px}
+.nameRow{display:flex;gap:7px}
+.nameRow input{flex:1;min-width:0;background:#0f1420;border:1px solid #2a3448;border-radius:10px;
+  padding:11px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;touch-action:manipulation;
+  -webkit-user-select:text;user-select:text}
+.nameRow input:focus{border-color:#ff4159}
+.nameRow button{padding:0 15px;border-radius:10px;background:#ff2d46;font-weight:900;font-size:13px}
+.resBtns{display:flex;gap:8px}
+.btn{flex:1;padding:14px 10px;border-radius:14px;font-weight:900;font-size:14px;letter-spacing:-.2px;
+  background:#1a2230;border:1px solid #2a3448;transition:transform .08s}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:linear-gradient(180deg,#ff4d64,#d3102c);border-color:#ff6b7e;
+  box-shadow:0 8px 22px rgba(255,45,70,.32)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ TITLE ============ -->
+  <section id="title" class="screen on">
+    <div class="brand">
+      <div class="badge">🚗💨</div>
+      <h1>빵빵! <em>클락션</em></h1>
+      <p class="sub">운전 스트레스 해소 시뮬레이터</p>
+    </div>
+    <div class="modes">
+      <button class="mode" data-mode="A">
+        <span class="mi">🛣️</span>
+        <span class="mt">출근길 스테이지</span>
+        <span class="md">빡침 상황 10단계 순차 참교육</span>
+        <span class="tag">해소율 100%</span>
+      </button>
+      <button class="mode" data-mode="B">
+        <span class="mi">🔥</span>
+        <span class="mt">극대노 아케이드</span>
+        <span class="md">60초 콤보·피버 타이밍 배틀</span>
+        <span class="tag">S~F 랭크</span>
+      </button>
+      <button class="mode" data-mode="C">
+        <span class="mi">♾️</span>
+        <span class="mt">무한 도로 서바이벌</span>
+        <span class="md">멘탈 하트 3개, 끝없는 빌런</span>
+        <span class="tag">최고기록</span>
+      </button>
+    </div>
+    <div class="titleFoot">
+      <span id="bestLabel">🏆 최고 0</span>
+      <button id="muteBtn" class="mini">🔊 소리 켜짐</button>
+    </div>
+    <div class="hintline">톡 = 매너빵 · 톡톡 = 연타빵 · 꾸욱 = 롱빵<br>스쿨존·보행자는 참아야 합니다</div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <section id="game" class="screen">
+    <div id="hud">
+      <button id="backBtn" class="iconBtn" aria-label="메뉴로">←</button>
+      <div class="hudMid">
+        <div class="hudTop"><b id="hudTitle">출근길 스테이지</b><span id="hudRight">1/10</span></div>
+        <div class="bar"><i id="barFill"></i></div>
+      </div>
+      <button id="hudMute" class="iconBtn" aria-label="소리">🔊</button>
+    </div>
+    <div id="chips">
+      <span class="chip hide" id="cAnger">😤 <b>0</b></span>
+      <span class="chip hide" id="cCombo">⚡ <b>0</b></span>
+      <span class="chip hide" id="cScore">💯 <b>0</b></span>
+      <span class="chip hide" id="cHeart">❤️❤️❤️</span>
+      <span class="chip hide" id="cComplaint">📮 민원 <b>0</b></span>
+    </div>
+
+    <div id="stage">
+      <canvas id="road"></canvas>
+      <div id="glass"></div>
+      <div id="feverTint"></div>
+      <div id="feverBand"></div>
+      <div id="bubbles"></div>
+      <div id="honkLayer"></div>
+      <div id="flash"></div>
+      <div id="cue"><span class="ci">👉</span><span id="cueText">준비…</span><i id="cueBar"></i></div>
+    </div>
+
+    <div id="controls">
+      <div id="meters">
+        <div class="meter"><span class="mlab">분노</span><div class="mtrack"><i id="angerBar"></i></div></div>
+        <div class="meter"><span class="mlab">dB</span><div class="mtrack"><i id="dbBar"></i><b id="dbPeak">0dB</b></div></div>
+      </div>
+      <div id="wheelWrap">
+        <div id="wheel">
+          <div class="spoke l"></div>
+          <div class="spoke r"></div>
+          <div id="holdRing"></div>
+          <button id="horn" aria-label="클락션">
+            <span class="hi">📢</span>
+            <span class="ht">HORN</span>
+          </button>
+        </div>
+      </div>
+      <div id="legend"><b>톡</b> 매너빵 · <b>톡톡</b> 연타빵 · <b>꾸욱</b> 롱빵</div>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="result" class="screen">
+    <div class="resTop">
+      <div class="resBig" id="resBig">100%</div>
+      <div class="resTitle" id="resTitle">스트레스 해소율 100%</div>
+      <div class="resSub" id="resSub"></div>
+    </div>
+    <div class="resStats" id="resStats"></div>
+    <div id="resExtra"></div>
+    <div class="resBtns" id="resBtns"></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------------------------------------------------------------- utils */
+const $ = (s) => document.querySelector(s);
+const clamp = (v,a,b) => v<a?a:(v>b?b:v);
+const rnd = (a,b) => a + Math.random()*(b-a);
+const now = () => performance.now();
+const LS = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------------------------------------------------------------- sound */
+const Sound = (function(){
+  let ctx=null, master=null, longVoice=null;
+  let muted = LS.get('rrh_mute', false);
+
+  function ensure(){
+    if(ctx) return ctx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    try{
+      ctx = new AC();
+      master = ctx.createGain();
+      master.gain.value = muted ? 0 : 0.5;
+      master.connect(ctx.destination);
+    }catch(e){ ctx=null; }
+    return ctx;
+  }
+  function resume(){
+    const c = ensure();
+    if(c && c.state === 'suspended'){ c.resume().catch(function(){}); }
+  }
+  function blip(t0, dur, peak, cut){
+    const c = ctx;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0+0.012);
+    g.gain.setValueAtTime(peak, t0+dur*0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    const lp = c.createBiquadFilter();
+    lp.type='lowpass'; lp.frequency.setValueAtTime(cut||2400, t0); lp.Q.value=1.1;
+    lp.connect(g); g.connect(master);
+    const parts = [[400,-5,'sawtooth',0.85],[500,5,'square',0.75],[1200,0,'sawtooth',0.10]];
+    parts.forEach(function(p){
+      const o = c.createOscillator();
+      o.type = p[2];
+      o.frequency.setValueAtTime(p[0], t0);
+      o.detune.setValueAtTime(p[1], t0);
+      const oa = c.createGain(); oa.gain.value = p[3];
+      o.connect(oa); oa.connect(lp);
+      o.start(t0); o.stop(t0+dur+0.06);
+    });
+  }
+  function startLong(){
+    const c = ensure(); if(!c) return;
+    if(longVoice) return;
+    const t0 = c.currentTime + 0.005;
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.46, t0+0.035);
+    const lp = c.createBiquadFilter();
+    lp.type='lowpass'; lp.frequency.value=2600; lp.Q.value=0.9;
+    lp.connect(g); g.connect(master);
+    const oscs=[];
+    [[400,-7,'sawtooth',0.85],[500,7,'square',0.65],[800,0,'sawtooth',0.09]].forEach(function(p){
+      const o=c.createOscillator();
+      o.type=p[2]; o.frequency.value=p[0]; o.detune.value=p[1];
+      const oa=c.createGain(); oa.gain.value=p[3];
+      o.connect(oa); oa.connect(lp); o.start(t0);
+      oscs.push(o);
+    });
+    const lfo=c.createOscillator(); lfo.type='sine'; lfo.frequency.value=5.4;
+    const lg=c.createGain(); lg.gain.value=7;
+    lfo.connect(lg);
+    oscs.forEach(function(o){ try{ lg.connect(o.detune); }catch(e){} });
+    lfo.start(t0); oscs.push(lfo);
+    longVoice = {g:g, oscs:oscs};
+  }
+  function stopLong(){
+    if(!longVoice || !ctx) return;
+    const t = ctx.currentTime;
+    const v = longVoice; longVoice = null;
+    try{
+      v.g.gain.cancelScheduledValues(t);
+      v.g.gain.setValueAtTime(Math.max(0.0002, v.g.gain.value), t);
+      v.g.gain.exponentialRampToValueAtTime(0.0001, t+0.16);
+    }catch(e){}
+    v.oscs.forEach(function(o){ try{ o.stop(t+0.2); }catch(e){} });
+  }
+  function horn(kind){
+    const c = ensure(); if(!c) return;
+    if(c.state === 'suspended') resume();
+    const t = c.currentTime + 0.004;
+    if(kind==='tap'){ blip(t, 0.15, 0.5); }
+    else if(kind==='tap2'){ blip(t, 0.10, 0.45); blip(t+0.13, 0.11, 0.48); }
+    else if(kind==='double'){ blip(t, 0.10, 0.46); blip(t+0.13, 0.10, 0.5); blip(t+0.26, 0.13, 0.55); }
+    else if(kind==='long'){ startLong(); }
+  }
+  function ui(freq){
+    const c = ensure(); if(!c || muted) return;
+    const t = c.currentTime + 0.003;
+    const o = c.createOscillator(); o.type='triangle';
+    o.frequency.setValueAtTime(freq||740, t);
+    o.frequency.exponentialRampToValueAtTime((freq||740)*0.72, t+0.07);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.14,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+0.09);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t+0.1);
+  }
+  function setMuted(v){
+    muted = !!v; LS.set('rrh_mute', muted);
+    if(master) master.gain.value = muted ? 0 : 0.5;
+    if(muted) stopLong();
+    return muted;
+  }
+  return {resume:resume, horn:horn, stopLong:stopLong, ui:ui, setMuted:setMuted,
+          isMuted:function(){return muted;}};
+})();
+
+function vibrate(p){ if(navigator.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
+
+/* ---------------------------------------------------------------- villains */
+const V = {
+  lanehog:{name:'1차로 정속충', icon:'🐢', hint:'롱빵으로 비켜라!', accept:['long'], win:2600,
+    env:'highway', bubble:'1차로에서 80km/h 정속 중…', good:'비켰다! 1차로는 추월차로다', bad:'못 비켰다… 계속 막힌다'},
+  cutin:{name:'무깜빡이 칼치기', icon:'⚠️', hint:'연타빵으로 응징!', accept:['double'], win:1600,
+    env:'highway', bubble:'깜빡이 없이 끼어든다!!', good:'빵빵빵! 깜빡이가 장식이냐!!', bad:'칼치기 당했다…'},
+  phone:{name:'초록불에 폰 보는 앞차', icon:'📱', hint:'톡! 매너빵 (롱빵도 OK)', accept:['tap','long'], win:2600,
+    env:'city', bubble:'초록불인데 폰만 본다…', good:'띡! 앞 좀 가주세요', bad:'초록불인데 계속 멈춰있다'},
+  hazard:{name:'비상등 불법주정차', icon:'🚧', hint:'롱빵으로 밀어내기', accept:['long'], win:2600,
+    env:'city', bubble:'비상등 켜고 도로 한가운데 정차', good:'빠아아앙~ 길 좀 비켜주세요!!', bad:'차가 꿈쩍도 안 한다'},
+  blocking:{name:'교차로 꼬리물기', icon:'🚫', hint:'연타빵!', accept:['double'], win:1800,
+    env:'city', bubble:'교차로 한복판에 멈춰버렸다', good:'빵빵빵! 교차로에 왜 들어와!!', bad:'교차로가 막혔다'},
+  highbeam:{name:'눈뽕 상향등', icon:'🔆', hint:'연타빵!', accept:['double'], win:1700,
+    env:'night', night:true, bubble:'상향등으로 눈을 찌른다!!', good:'빵빵빵! 하향등 켜라!!', bad:'눈이 부셔서 앞이 안 보인다'},
+  school:{name:'[함정] 스쿨존 어린이', icon:'🚸', hint:'경적 금지! 참아야 한다', accept:[], win:3000, trap:true,
+    env:'school', bubble:'스쿨존, 어린이가 건너간다', good:'참았다… 어린이 보호가 먼저', bad:'경적! 민원 접수됐다…'},
+  walker:{name:'[함정] 골목길 보행자', icon:'🚶', hint:'참아야 한다', accept:[], win:2800, trap:true,
+    env:'alley', bubble:'골목길, 보행자가 앞에 있다', good:'참았다. 골목은 보행자 우선', bad:'경적! 민원 접수됐다…'},
+  taxi:{name:'갓길에서 튀어나온 택시', icon:'🚕', hint:'연타빵!', accept:['double'], win:1500,
+    env:'highway', bubble:'갓길에서 갑자기 튀어나온다!!', good:'빵빵빵! 갓길에서 튀어나오지 마!', bad:'아찔하게 스쳤다'},
+  wrongway:{name:'진입로 역주행', icon:'⛔', hint:'롱빵!', accept:['long'], win:2400,
+    env:'garage', night:true, bubble:'진입로에서 역주행으로 들어온다!!', good:'빠아아앙~ 역주행이다!!', bad:'정면충돌 직전이다'}
+};
+const STAGES = ['lanehog','cutin','phone','hazard','blocking','highbeam','school','walker','taxi','wrongway'];
+const POOL = ['lanehog','cutin','phone','hazard','blocking','highbeam','taxi','wrongway'];
+
+/* ---------------------------------------------------------------- state */
+const G = {
+  mode:'A', running:false, gen:0,
+  round:null, roundCount:0,
+  score:0, combo:0, maxCombo:0, hits:0, misses:0, honks:0,
+  anger:0, complaints:0, cleared:0, stage:0,
+  hearts:3, timeLeft:60, feverUntil:0, fever:false,
+  db:0, dbPeak:0, lastHonk:0
+};
+
+/* ---------------------------------------------------------------- canvas */
+const cv = $('#road');
+const ctx2 = cv.getContext('2d');
+let W = 390, H = 480, DPR = 1;
+function resizeCanvas(){
+  const r = cv.getBoundingClientRect();
+  if(r.width < 2 || r.height < 2) return;
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = r.width; H = r.height;
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx2.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', function(){ resizeCanvas(); });
+window.addEventListener('orientationchange', function(){ setTimeout(resizeCanvas, 250); });
+
+const HZ = 0.34;                      // horizon ratio
+function yAt(z){ const e=z*z; return H*HZ + (H-H*HZ)*e; }
+function sAt(z){ const e=z*z; return 0.28 + 0.72*e; }
+function halfAt(z){ const e=z*z; return W*0.045 + (W*1.02 - W*0.045)*e; }
+
+const scene = { def:V.lanehog, t0:0, scroll:0, shake:0, glare:0, flash:0, anim:{} };
+
+function rr(x,y,w,h,r){
+  r = Math.min(r, Math.abs(w)/2, Math.abs(h)/2);
+  ctx2.beginPath();
+  ctx2.moveTo(x+r,y);
+  ctx2.lineTo(x+w-r,y); ctx2.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx2.lineTo(x+w,y+h-r); ctx2.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx2.lineTo(x+r,y+h); ctx2.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx2.lineTo(x,y+r); ctx2.quadraticCurveTo(x,y,x+r,y);
+  ctx2.closePath();
+}
+function shade(hex, f){
+  const n = parseInt(hex.slice(1),16);
+  let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  r=clamp(Math.round(r*f),0,255); g=clamp(Math.round(g*f),0,255); b=clamp(Math.round(b*f),0,255);
+  return 'rgb('+r+','+g+','+b+')';
+}
+function mod(a,n){ return ((a%n)+n)%n; }
+
+/* ---- background ---- */
+function drawSky(t){
+  const night = !!scene.def.night;
+  const g = ctx2.createLinearGradient(0,0,0,H*0.55);
+  if(night){
+    g.addColorStop(0,'#070c1b'); g.addColorStop(0.55,'#111a33'); g.addColorStop(1,'#25304d');
+  } else {
+    g.addColorStop(0,'#4aa9ef'); g.addColorStop(0.5,'#8fd0fb'); g.addColorStop(1,'#d8eeff');
+  }
+  ctx2.fillStyle = g; ctx2.fillRect(-30,-30,W+60,H*0.6);
+
+  if(night){
+    for(let i=0;i<26;i++){
+      const r = mod(Math.sin(i*91.7)*43758.5453,1);
+      const r2 = mod(Math.cos(i*47.3)*12345.6789,1);
+      ctx2.globalAlpha = 0.35 + 0.5*Math.abs(Math.sin(t*0.7+i));
+      ctx2.fillStyle='#dce6ff';
+      ctx2.fillRect(r*W, r2*H*0.22, 1.6, 1.6);
+    }
+    ctx2.globalAlpha=1;
+  } else {
+    // sun
+    ctx2.fillStyle='rgba(255,246,214,.85)';
+    ctx2.beginPath(); ctx2.arc(W*0.78, H*0.13, W*0.075, 0, 7); ctx2.fill();
+    ctx2.fillStyle='rgba(255,246,214,.22)';
+    ctx2.beginPath(); ctx2.arc(W*0.78, H*0.13, W*0.15, 0, 7); ctx2.fill();
+    // clouds
+    ctx2.fillStyle='rgba(255,255,255,.75)';
+    for(let i=0;i<3;i++){
+      const x = mod(i*W*0.55 + t*4, W+120) - 60;
+      const y = H*0.08 + i*H*0.055;
+      ctx2.beginPath();
+      ctx2.ellipse(x, y, W*0.10, H*0.018, 0,0,7);
+      ctx2.ellipse(x+W*0.05, y-H*0.008, W*0.07, H*0.015, 0,0,7);
+      ctx2.fill();
+    }
+  }
+}
+function drawSkyline(t){
+  const hz = H*HZ;
+  const night = !!scene.def.night;
+  const base = night ? '#0e1628' : '#9db4c9';
+  const win  = night ? 'rgba(255,225,150,.55)' : 'rgba(255,255,255,.35)';
+  for(let i=0;i<20;i++){
+    const r = Math.abs(Math.sin(i*12.9898)*43758.5453) % 1;
+    const bw = W*(0.05 + r*0.06);
+    const bh = H*(0.045 + r*0.14);
+    const x = mod(i*W*0.088 - scene.scroll*W*0.035, W*1.25) - W*0.12;
+    ctx2.fillStyle = base;
+    ctx2.fillRect(x, hz-bh, bw, bh+6);
+    if(night){
+      ctx2.fillStyle = win;
+      for(let a=0;a<3;a++) for(let b=0;b<3;b++){
+        if(((i*7+a*3+b)%4)===0) ctx2.fillRect(x+bw*(0.18+a*0.28), hz-bh+bh*(0.18+b*0.26), bw*0.14, bh*0.13);
+      }
+    }
+  }
+}
+
+/* ---- road ---- */
+function drawRoadBase(){
+  const hz = H*HZ;
+  const env = scene.def.env;
+  const ground = env==='garage' ? '#22262e' : env==='alley' ? '#2a2b31' : (scene.def.night?'#1a2130':'#6b8f63');
+  ctx2.fillStyle = ground; ctx2.fillRect(-30, hz, W+60, H-hz+30);
+
+  // asphalt
+  const g = ctx2.createLinearGradient(0,hz,0,H);
+  g.addColorStop(0, env==='garage' ? '#33373f' : '#4a505a');
+  g.addColorStop(1, env==='garage' ? '#3b3f48' : '#2f343c');
+  ctx2.beginPath();
+  ctx2.moveTo(W/2 - halfAt(0.02), hz); ctx2.lineTo(W/2 + halfAt(0.02), hz);
+  ctx2.lineTo(W/2 + halfAt(1), H+2); ctx2.lineTo(W/2 - halfAt(1), H+2);
+  ctx2.closePath(); ctx2.fillStyle = g; ctx2.fill();
+}
+function drawMarkings(){
+  const env = scene.def.env;
+  if(env==='alley') return;
+  const lanes = env==='garage' ? 1 : 3;
+  const phase = mod(scene.scroll,1);
+  const N = 15;
+
+  // edge lines
+  [-0.96, 0.96].forEach(function(fr){
+    ctx2.beginPath();
+    ctx2.moveTo(W/2 + fr*halfAt(0.03), H*HZ);
+    ctx2.lineTo(W/2 + fr*halfAt(1), H+2);
+    ctx2.lineWidth = Math.max(1.4, W*0.008); ctx2.strokeStyle='rgba(255,255,255,.62)'; ctx2.stroke();
+  });
+  // dashed dividers
+  const divs = [];
+  for(let i=1;i<lanes;i++) divs.push(-1 + 2*i/lanes);
+  ctx2.fillStyle='rgba(255,255,255,.74)';
+  divs.forEach(function(fr){
+    for(let i=0;i<N;i++){
+      let z0 = (i + phase)/N;
+      if(z0>1) continue;
+      const z1 = Math.min(1, z0 + 0.42/N);
+      const w0 = Math.max(1.2, W*0.010*sAt(z0));
+      const w1 = Math.max(1.2, W*0.010*sAt(z1));
+      const x0 = W/2 + fr*halfAt(z0), x1 = W/2 + fr*halfAt(z1);
+      const y0 = yAt(z0), y1 = yAt(z1);
+      ctx2.beginPath();
+      ctx2.moveTo(x0-w0/2, y0); ctx2.lineTo(x0+w0/2, y0);
+      ctx2.lineTo(x1+w1/2, y1); ctx2.lineTo(x1-w1/2, y1);
+      ctx2.closePath(); ctx2.fill();
+    }
+  });
+}
+function drawCrosswalk(z0, z1){
+  const bars = 8;
+  ctx2.fillStyle='rgba(255,255,255,.85)';
+  for(let i=0;i<bars;i++){
+    const f0 = -0.95 + 1.9*i/bars;
+    const f1 = f0 + (1.9/bars)*0.55;
+    const za = z0 + (z1-z0)*0, zb = z1;
+    const yA = yAt(za), yB = yAt(zb);
+    const xA0 = W/2 + f0*halfAt(za), xA1 = W/2 + f1*halfAt(za);
+    const xB0 = W/2 + f0*halfAt(zb), xB1 = W/2 + f1*halfAt(zb);
+    ctx2.beginPath();
+    ctx2.moveTo(xA0,yA); ctx2.lineTo(xA1,yA); ctx2.lineTo(xB1,yB); ctx2.lineTo(xB0,yB);
+    ctx2.closePath(); ctx2.fill();
+  }
+}
+
+/* ---- objects ---- */
+function drawCar(x, gy, w, color, o){
+  o = o || {};
+  const h = w*0.72;
+  const bodyH = h*0.56;
+  ctx2.save();
+  ctx2.translate(x, gy);
+  if(o.rot) ctx2.rotate(o.rot);
+  if(o.scale) ctx2.scale(o.scale,o.scale);
+
+  ctx2.fillStyle='rgba(0,0,0,.34)';
+  ctx2.beginPath(); ctx2.ellipse(0, 2, w*0.54, h*0.085, 0,0,7); ctx2.fill();
+
+  // wheels
+  ctx2.fillStyle='#15181e';
+  rr(-w*0.50, -h*0.16, w*0.16, h*0.17, 4); ctx2.fill();
+  rr( w*0.34, -h*0.16, w*0.16, h*0.17, 4); ctx2.fill();
+
+  // cabin
+  const roofW = w*0.72, roofH = h*0.34;
+  ctx2.fillStyle = shade(color,0.88);
+  rr(-roofW/2, -bodyH-roofH+h*0.05, roofW, roofH+4, w*0.07); ctx2.fill();
+
+  // body
+  const grd = ctx2.createLinearGradient(0,-bodyH,0,0);
+  grd.addColorStop(0, shade(color,1.18)); grd.addColorStop(0.6, color); grd.addColorStop(1, shade(color,0.72));
+  rr(-w/2, -bodyH, w, bodyH, w*0.055); ctx2.fillStyle=grd; ctx2.fill();
+
+  // rear window
+  ctx2.fillStyle = o.window || 'rgba(20,30,46,.94)';
+  rr(-roofW*0.40, -bodyH-roofH+h*0.09, roofW*0.80, roofH*0.68, 4); ctx2.fill();
+  ctx2.fillStyle='rgba(255,255,255,.12)';
+  rr(-roofW*0.36, -bodyH-roofH+h*0.12, roofW*0.34, roofH*0.22, 3); ctx2.fill();
+
+  // taillights
+  const tw = w*0.19, th = bodyH*0.26, ty = -bodyH*0.70;
+  [-1,1].forEach(function(sg){
+    const x0 = sg<0 ? -w*0.5 + w*0.055 : w*0.5 - w*0.055 - tw;
+    rr(x0, ty, tw, th, 3);
+    ctx2.fillStyle = o.brake ? '#ff3a3a' : (o.hazard && o.hz ? '#ffb02e' : '#8e2028');
+    ctx2.fill();
+    if(o.brake || (o.hazard && o.hz)){
+      const cx = x0+tw/2, cy = ty+th/2;
+      const gl = ctx2.createRadialGradient(cx,cy,0,cx,cy,w*0.19);
+      gl.addColorStop(0, o.brake? 'rgba(255,60,60,.55)' : 'rgba(255,176,46,.6)');
+      gl.addColorStop(1,'rgba(255,60,60,0)');
+      ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(cx,cy,w*0.19,0,7); ctx2.fill();
+    }
+  });
+
+  // bumper + plate
+  ctx2.fillStyle=shade(color,0.55);
+  rr(-w*0.46, -bodyH*0.24, w*0.92, bodyH*0.20, 4); ctx2.fill();
+  ctx2.fillStyle='#e9eef5';
+  rr(-w*0.13, -bodyH*0.24+1, w*0.26, bodyH*0.15, 2); ctx2.fill();
+  ctx2.fillStyle='#1b2434';
+  ctx2.font = '700 ' + Math.max(6, w*0.062) + 'px system-ui, sans-serif';
+  ctx2.textAlign='center'; ctx2.textBaseline='middle';
+  ctx2.fillText(o.plate || '12가 3456', 0, -bodyH*0.24 + bodyH*0.085);
+
+  // roof sign / phone glow
+  if(o.phoneGlow){
+    const gl = ctx2.createRadialGradient(w*0.05,-bodyH-roofH*0.6,0,w*0.05,-bodyH-roofH*0.6,w*0.34);
+    gl.addColorStop(0,'rgba(150,220,255,.85)'); gl.addColorStop(1,'rgba(150,220,255,0)');
+    ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(w*0.05,-bodyH-roofH*0.6,w*0.34,0,7); ctx2.fill();
+  }
+  if(o.taxiTop){
+    ctx2.fillStyle='#ffd23e';
+    rr(-w*0.16, -bodyH-roofH-h*0.02+h*0.05, w*0.32, h*0.10, 3); ctx2.fill();
+    ctx2.fillStyle='#2a1a00';
+    ctx2.font='700 ' + Math.max(6,w*0.075) + 'px system-ui, sans-serif';
+    ctx2.fillText('TAXI', 0, -bodyH-roofH+h*0.005+h*0.05);
+  }
+  ctx2.restore();
+}
+
+function drawFrontCar(x, gy, w, color, o){
+  o = o || {};
+  const h = w*0.72, bodyH = h*0.56;
+  ctx2.save(); ctx2.translate(x,gy);
+  if(o.rot) ctx2.rotate(o.rot);
+  ctx2.fillStyle='rgba(0,0,0,.34)';
+  ctx2.beginPath(); ctx2.ellipse(0,2,w*0.54,h*0.085,0,0,7); ctx2.fill();
+
+  const roofW=w*0.72, roofH=h*0.32;
+  ctx2.fillStyle=shade(color,0.9);
+  rr(-roofW/2,-bodyH-roofH+h*0.05,roofW,roofH+4,w*0.07); ctx2.fill();
+  const grd=ctx2.createLinearGradient(0,-bodyH,0,0);
+  grd.addColorStop(0,shade(color,1.15)); grd.addColorStop(1,shade(color,0.7));
+  rr(-w/2,-bodyH,w,bodyH,w*0.055); ctx2.fillStyle=grd; ctx2.fill();
+  // windshield
+  ctx2.fillStyle='rgba(20,30,46,.9)';
+  rr(-roofW*0.40,-bodyH-roofH+h*0.09,roofW*0.80,roofH*0.66,4); ctx2.fill();
+  // grille
+  ctx2.fillStyle=shade(color,0.5);
+  rr(-w*0.22,-bodyH*0.42,w*0.44,bodyH*0.22,3); ctx2.fill();
+  // headlights + beams
+  const hr = w*0.11;
+  [-1,1].forEach(function(sg){
+    const cx = sg*w*0.36, cy = -bodyH*0.58;
+    if(o.bright){
+      const gl=ctx2.createRadialGradient(cx,cy,0,cx,cy,w*0.9);
+      gl.addColorStop(0,'rgba(255,255,255,.95)');
+      gl.addColorStop(0.18,'rgba(255,250,220,.55)');
+      gl.addColorStop(1,'rgba(255,250,220,0)');
+      ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(cx,cy,w*0.9,0,7); ctx2.fill();
+    }
+    ctx2.fillStyle=o.bright?'#fffdf0':'#fff4c9';
+    ctx2.beginPath(); ctx2.arc(cx,cy,hr,0,7); ctx2.fill();
+    ctx2.fillStyle= o.bright? 'rgba(255,255,255,.95)':'rgba(255,240,180,.7)';
+    ctx2.beginPath(); ctx2.arc(cx,cy,hr*0.55,0,7); ctx2.fill();
+  });
+  ctx2.fillStyle='#e9eef5';
+  rr(-w*0.13,-bodyH*0.2,w*0.26,bodyH*0.14,2); ctx2.fill();
+  ctx2.restore();
+}
+
+function drawPerson(x, gy, hgt, color, phase){
+  ctx2.save(); ctx2.translate(x,gy);
+  ctx2.fillStyle='rgba(0,0,0,.3)';
+  ctx2.beginPath(); ctx2.ellipse(0,0,hgt*0.16,hgt*0.045,0,0,7); ctx2.fill();
+  const sw = Math.sin(phase)*hgt*0.11;
+  ctx2.strokeStyle='#2b3444'; ctx2.lineWidth=Math.max(1.6,hgt*0.075); ctx2.lineCap='round';
+  ctx2.beginPath(); ctx2.moveTo(0,-hgt*0.40); ctx2.lineTo(sw,-hgt*0.015); ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(0,-hgt*0.40); ctx2.lineTo(-sw,-hgt*0.015); ctx2.stroke();
+  ctx2.strokeStyle=color; ctx2.lineWidth=Math.max(2,hgt*0.055);
+  ctx2.beginPath(); ctx2.moveTo(0,-hgt*0.66); ctx2.lineTo(sw*0.7,-hgt*0.40); ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(0,-hgt*0.66); ctx2.lineTo(-sw*0.7,-hgt*0.40); ctx2.stroke();
+  ctx2.fillStyle=color;
+  rr(-hgt*0.12,-hgt*0.72,hgt*0.24,hgt*0.34,hgt*0.08); ctx2.fill();
+  ctx2.fillStyle='#f2cba6';
+  ctx2.beginPath(); ctx2.arc(0,-hgt*0.80,hgt*0.115,0,7); ctx2.fill();
+  ctx2.fillStyle='#2b3444';
+  ctx2.beginPath(); ctx2.arc(0,-hgt*0.825,hgt*0.115,Math.PI,0); ctx2.fill();
+  ctx2.restore();
+}
+
+function drawSchoolSign(x, gy, hgt){
+  ctx2.save(); ctx2.translate(x,gy);
+  ctx2.fillStyle='#8d949e';
+  ctx2.fillRect(-hgt*0.03, -hgt, hgt*0.06, hgt);
+  ctx2.save();
+  ctx2.translate(0,-hgt*1.15); ctx2.rotate(Math.PI/4);
+  const s=hgt*0.52;
+  ctx2.fillStyle='#ffd23e'; rr(-s/2,-s/2,s,s,hgt*0.06); ctx2.fill();
+  ctx2.strokeStyle='#1e2530'; ctx2.lineWidth=Math.max(1.5,hgt*0.035); ctx2.stroke();
+  ctx2.restore();
+  ctx2.fillStyle='#1e2530';
+  ctx2.font = '700 ' + Math.max(7,hgt*0.20) + 'px system-ui, sans-serif';
+  ctx2.textAlign='center'; ctx2.textBaseline='middle';
+  ctx2.fillText('🚸', 0, -hgt*1.15);
+  ctx2.restore();
+}
+
+function drawTrafficLight(x, gy, h){
+  ctx2.save(); ctx2.translate(x,gy);
+  ctx2.fillStyle='#4b535f'; ctx2.fillRect(-h*0.045,-h,h*0.09,h);
+  ctx2.fillStyle='#20262f'; rr(-h*0.16,-h*1.30,h*0.32,h*0.42,h*0.06); ctx2.fill();
+  const cols=[['#5a1b1b',-h*1.20],['#5a4a17',-h*1.11],['#4dff88',-h*1.02]];
+  cols.forEach(function(c,i){
+    ctx2.beginPath(); ctx2.arc(0,c[1],h*0.052,0,7);
+    ctx2.fillStyle=c[0]; ctx2.fill();
+    if(i===2){
+      const gl=ctx2.createRadialGradient(0,c[1],0,0,c[1],h*0.22);
+      gl.addColorStop(0,'rgba(77,255,136,.55)'); gl.addColorStop(1,'rgba(77,255,136,0)');
+      ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(0,c[1],h*0.22,0,7); ctx2.fill();
+    }
+  });
+  ctx2.restore();
+}
+
+function drawAlleyWalls(){
+  const hz=H*HZ;
+  ctx2.fillStyle='#20222a';
+  ctx2.beginPath(); ctx2.moveTo(0,-10); ctx2.lineTo(W*0.30,hz+4); ctx2.lineTo(W*0.30,H+10); ctx2.lineTo(0,H+10); ctx2.closePath(); ctx2.fill();
+  ctx2.beginPath(); ctx2.moveTo(W,-10); ctx2.lineTo(W*0.70,hz+4); ctx2.lineTo(W*0.70,H+10); ctx2.lineTo(W,H+10); ctx2.closePath(); ctx2.fill();
+  // brick hints
+  ctx2.strokeStyle='rgba(255,255,255,.05)'; ctx2.lineWidth=1;
+  for(let i=0;i<9;i++){
+    const y = hz + (H-hz)*(i/8);
+    ctx2.beginPath(); ctx2.moveTo(0,y); ctx2.lineTo(W*0.30*(0.2+0.8*(i/8)), y); ctx2.stroke();
+    ctx2.beginPath(); ctx2.moveTo(W,y); ctx2.lineTo(W-W*0.30*(0.2+0.8*(i/8)), y); ctx2.stroke();
+  }
+}
+function drawGarage(){
+  const hz=H*HZ;
+  ctx2.fillStyle='#1b1e25'; ctx2.fillRect(-20,-20,W+40,hz+40);
+  ctx2.fillStyle='#2b2f38';
+  [0.05,0.32,0.68,0.95].forEach(function(fr,i){
+    const x=fr*W;
+    const top = hz - H*(0.10+ (i%2)*0.03);
+    ctx2.fillRect(x-W*0.035, top, W*0.07, H*0.30);
+  });
+  ctx2.fillStyle='rgba(255,240,190,.12)';
+  ctx2.beginPath(); ctx2.ellipse(W*0.5, hz+H*0.05, W*0.5, H*0.07, 0,0,7); ctx2.fill();
+  // ceiling lamps
+  if(scene.def.night){
+    for(let i=0;i<3;i++){
+      const gl=ctx2.createRadialGradient(W*(0.25+i*0.25), hz-H*0.02, 0, W*(0.25+i*0.25), hz-H*0.02, W*0.35);
+      gl.addColorStop(0,'rgba(255,236,180,.18)'); gl.addColorStop(1,'rgba(255,236,180,0)');
+      ctx2.fillStyle=gl; ctx2.beginPath(); ctx2.arc(W*(0.25+i*0.25),hz-H*0.02,W*0.35,0,7); ctx2.fill();
+    }
+  }
+}
+
+/* ---- hood (1st person) ---- */
+function drawHood(){
+  const hoodTop = H*0.86;
+  const g = ctx2.createLinearGradient(0,hoodTop,0,H);
+  g.addColorStop(0,'#1b2434'); g.addColorStop(0.25,'#2b3a4a'); g.addColorStop(1,'#0d1118');
+  ctx2.beginPath();
+  ctx2.moveTo(-10,H+10);
+  ctx2.lineTo(-10,hoodTop+H*0.02);
+  ctx2.quadraticCurveTo(W*0.5, hoodTop-H*0.035, W+10, hoodTop+H*0.02);
+  ctx2.lineTo(W+10,H+10);
+  ctx2.closePath();
+  ctx2.fillStyle = g; ctx2.fill();
+  ctx2.strokeStyle='rgba(255,255,255,.12)'; ctx2.lineWidth=1.4;
+  ctx2.beginPath();
+  ctx2.moveTo(-10,hoodTop+H*0.02);
+  ctx2.quadraticCurveTo(W*0.5, hoodTop-H*0.035, W+10, hoodTop+H*0.02);
+  ctx2.stroke();
+  // wipers hint
+  ctx2.strokeStyle='rgba(255,255,255,.08)'; ctx2.lineWidth=2;
+  ctx2.beginPath(); ctx2.moveTo(W*0.12, hoodTop-H*0.01); ctx2.lineTo(W*0.42, hoodTop+H*0.01); ctx2.stroke();
+  ctx2.beginPath(); ctx2.moveTo(W*0.88, hoodTop-H*0.01); ctx2.lineTo(W*0.58, hoodTop+H*0.01); ctx2.stroke();
+}
+
+/* ---- scene render ---- */
+function renderScene(t){
+  const def = scene.def;
+  const env = def.env;
+  ctx2.setTransform(DPR,0,0,DPR,0,0);
+  ctx2.clearRect(0,0,W,H);
+
+  ctx2.save();
+  if(scene.shake > 0.01){
+    const m = scene.shake * W*0.018;
+    ctx2.translate(rnd(-m,m), rnd(-m,m));
+  }
+
+  drawSky(t);
+  if(env==='garage') drawGarage(); else drawSkyline(t);
+  drawRoadBase();
+  if(env==='alley'){ drawAlleyWalls(); }
+  else drawMarkings();
+
+  if(env==='city' || env==='school'){
+    drawCrosswalk(0.50, 0.62);
+    drawTrafficLight(W*0.845, H*0.60, H*0.16);
+  }
+
+  drawVillain(t, def);
+
+  drawHood();
+  ctx2.restore();
+
+  // glare / flash overlays
+  if(scene.glare > 0.01){
+    const g = ctx2.createRadialGradient(W*0.5, H*0.46, 0, W*0.5, H*0.46, W*0.9);
+    g.addColorStop(0,'rgba(255,255,240,'+(0.5*scene.glare)+')');
+    g.addColorStop(0.4,'rgba(255,255,235,'+(0.18*scene.glare)+')');
+    g.addColorStop(1,'rgba(255,255,235,0)');
+    ctx2.fillStyle=g; ctx2.fillRect(0,0,W,H);
+  }
+  if(scene.flash > 0.01){
+    ctx2.fillStyle='rgba(255,255,255,'+(0.35*scene.flash)+')';
+    ctx2.fillRect(0,0,W,H);
+  }
+}
+
+function drawVillain(t, def){
+  const k = def.name && def.hint ? scene.key : 'lanehog';
+  const z = 0.74, gy = yAt(z), s = sAt(z);
+  const cw = W*0.48*s;
+  const cx = W*0.5;
+
+  switch(k){
+    case 'lanehog':
+      drawCar(cx - W*0.115*s, gy, cw, '#3d6ea8', {brake:true, plate:'서울 80가 0921'});
+      badge(W*0.5 - W*0.115*s, gy - cw*0.98, '1차로 80km/h 정속', '#ffd23e');
+      break;
+    case 'cutin': {
+      const p = clamp(t/0.85, 0, 1);
+      const e = 1 - Math.pow(1-p, 3);
+      const x = (cx + W*0.20*s) * (1-e) + (cx + W*0.005*s) * e;
+      drawCar(x, gy, cw*1.02, '#c0392b', {brake:true, rot: -0.13*(1-e), plate:'경기 55나 7712'});
+      if(p<0.9){
+        ctx2.strokeStyle='rgba(255,255,255,.35)'; ctx2.lineWidth=2;
+        for(let i=0;i<3;i++){
+          ctx2.beginPath();
+          ctx2.moveTo(x+cw*0.5+i*7, gy-cw*0.2-i*8);
+          ctx2.lineTo(x+cw*0.72+i*10, gy-cw*0.2-i*8);
+          ctx2.stroke();
+        }
+      }
+      break;
+    }
+    case 'phone':
+      drawCar(cx+W*0.02*s, gy*0.995, cw*1.05, '#5b6470', {brake:true, phoneGlow:true, plate:'서울 12다 3344'});
+      break;
+    case 'hazard': {
+      const hz = Math.floor(t*2.6)%2===0;
+      drawCar(cx + W*0.155*s, gy, cw*0.98, '#d8dde4', {hazard:true, hz:hz, plate:'인천 77라 5188'});
+      break;
+    }
+    case 'blocking':
+      drawCar(cx - W*0.02*s, gy*0.99, cw*1.04, '#2f7d5b', {brake:true, rot:0.22, plate:'부산 33마 0912'});
+      break;
+    case 'highbeam': {
+      drawFrontCar(W*0.36, gy*1.01, cw*1.1, '#20242c', {bright:true, rot:0.02});
+      const pulse = 0.65 + 0.35*Math.sin(t*7);
+      scene.glare = 0.85*pulse;
+      break;
+    }
+    case 'school': {
+      drawCar(cx+W*0.02*s, gy*1.005, cw*1.02, '#e0e4ea', {brake:true, plate:'서울 99사 1212'});
+      const walk = Math.sin(t*1.7);
+      drawSchoolSign(W*0.905, H*0.86, H*0.20);
+      drawPerson(W*0.40 + walk*W*0.05, yAt(0.63), H*0.10, '#ff6b6b', t*7);
+      drawPerson(W*0.46 + walk*W*0.05, yAt(0.66), H*0.085, '#4dabf7', t*7+1.4);
+      drawPerson(W*0.56 + walk*W*0.05, yAt(0.70), H*0.115, '#ffd43b', t*7+2.6);
+      break;
+    }
+    case 'walker': {
+      drawPerson(W*0.50 + Math.sin(t*1.1)*W*0.02, yAt(0.68), H*0.16, '#ff922b', t*5);
+      ctx2.fillStyle='rgba(0,0,0,.18)';
+      ctx2.fillRect(0, H*HZ, W, H*0.06);
+      break;
+    }
+    case 'taxi': {
+      const p = clamp(t/0.7,0,1);
+      const e = 1-Math.pow(1-p,3);
+      const x = cx + W*0.30*(1-e) - W*0.02*e;
+      drawCar(x, gy, cw*1.0, '#f0a020', {brake:true, rot:-0.10*(1-e), taxiTop:true, plate:'서울 31바 8282'});
+      if(p<0.8){
+        ctx2.fillStyle='rgba(255,255,255,.18)';
+        for(let i=0;i<4;i++){
+          const a = t*6+i;
+          ctx2.beginPath();
+          ctx2.arc(x+cw*0.45+Math.cos(a)*10, gy-Math.abs(Math.sin(a))*10, 5+i, 0, 7); ctx2.fill();
+        }
+      }
+      break;
+    }
+    case 'wrongway': {
+      drawFrontCar(cx + W*0.01*s, gy*1.01, cw*1.06, '#2b3038', {bright:true, rot:0.015});
+      scene.glare = 0.5 + 0.15*Math.sin(t*5);
+      break;
+    }
+    default:
+      drawCar(cx, gy, cw, '#3d6ea8', {brake:true});
+  }
+}
+
+function badge(x,y,text,color){
+  ctx2.save();
+  ctx2.font='800 ' + Math.max(9, W*0.028) + 'px system-ui,sans-serif';
+  const w = ctx2.measureText(text).width + 16;
+  ctx2.fillStyle='rgba(8,12,20,.78)';
+  rr(x-w/2, y-13, w, 22, 11); ctx2.fill();
+  ctx2.strokeStyle=color; ctx2.lineWidth=1; ctx2.stroke();
+  ctx2.fillStyle=color; ctx2.textAlign='center'; ctx2.textBaseline='middle';
+  ctx2.fillText(text, x, y-1);
+  ctx2.restore();
+}
+
+/* ---------------------------------------------------------------- HUD */
+const el = {
+  hudTitle:$('#hudTitle'), hudRight:$('#hudRight'), barFill:$('#barFill'),
+  cAnger:$('#cAnger'), cCombo:$('#cCombo'), cScore:$('#cScore'), cHeart:$('#cHeart'), cComplaint:$('#cComplaint'),
+  angerBar:$('#angerBar'), dbBar:$('#dbBar'), dbPeak:$('#dbPeak'),
+  cue:$('#cue'), cueText:$('#cueText'), cueBar:$('#cueBar'),
+  feverBand:$('#feverBand'), feverTint:$('#feverTint')
+};
+
+function setModeHud(){
+  ['cAnger','cCombo','cScore','cHeart','cComplaint'].forEach(function(k){ el[k].classList.add('hide'); });
+  if(G.mode==='A'){ el.cAnger.classList.remove('hide'); el.cCombo.classList.remove('hide'); el.cComplaint.classList.remove('hide'); }
+  if(G.mode==='B'){ el.cCombo.classList.remove('hide'); el.cScore.classList.remove('hide'); }
+  if(G.mode==='C'){ el.cCombo.classList.remove('hide'); el.cScore.classList.remove('hide'); el.cHeart.classList.remove('hide'); }
+}
+function updateHud(){
+  const m = G.mode;
+  el.hudTitle.textContent = m==='A'?'출근길 스테이지':(m==='B'?'극대노 아케이드':'무한 도로 서바이벌');
+  if(m==='A'){
+    el.hudRight.textContent = Math.min(G.stage+1,10)+'/10';
+    el.barFill.style.width = (G.cleared*10)+'%';
+  } else if(m==='B'){
+    el.hudRight.textContent = Math.max(0,G.timeLeft).toFixed(1)+'s';
+    el.barFill.style.width = clamp(G.timeLeft/60,0,1)*100+'%';
+  } else {
+    el.hudRight.textContent = G.roundCount+'빌런';
+    el.barFill.style.width = clamp(G.score/3000,0,1)*100+'%';
+  }
+  el.cAnger.innerHTML = '😤 <b>'+Math.round(G.anger)+'</b>';
+  el.cCombo.innerHTML = '⚡ <b>'+G.combo+'</b>';
+  el.cScore.innerHTML = '💯 <b>'+G.score+'</b>';
+  el.cComplaint.innerHTML = '📮 민원 <b>'+G.complaints+'</b>';
+  el.cHeart.innerHTML = '❤️'.repeat(Math.max(0,G.hearts)) + '🖤'.repeat(Math.max(0,3-G.hearts));
+  el.cCombo.classList.toggle('hot', G.combo>=3);
+  el.cCombo.classList.toggle('fever', !!G.fever);
+  el.cScore.classList.toggle('fever', !!G.fever);
+  el.angerBar.style.width = G.anger+'%';
+  el.dbBar.style.width = clamp((G.db-60)/60,0,1)*100+'%';
+  el.dbPeak.textContent = Math.round(G.dbPeak)+'dB';
+}
+
+/* ---------------------------------------------------------------- bubbles */
+const bubblesEl = $('#bubbles');
+function bubble(text, cls){
+  const d = document.createElement('div');
+  d.className = 'bub ' + (cls||'');
+  d.textContent = text;
+  d.style.left = (10 + Math.random()*30) + '%';
+  d.style.top = (28 + Math.random()*12) + '%';
+  bubblesEl.appendChild(d);
+  setTimeout(function(){ d.classList.add('out'); setTimeout(function(){ d.remove(); }, 380); }, 1500);
+}
+function honkText(kind){
+  const d = document.createElement('div');
+  d.className = 'honkfx ' + kind;
+  d.textContent = kind==='long' ? '빠아아앙~!' : (kind==='double' ? '빵빵빵!' : '띡!');
+  $('#honkLayer').appendChild(d);
+  setTimeout(function(){ d.remove(); }, 900);
+}
+
+/* ---------------------------------------------------------------- cue */
+let cueAnim = null;
+function setCue(def){
+  el.cue.style.opacity=1;
+  el.cue.className = def.trap ? 'warn' : '';
+  el.cue.querySelector('.ci').textContent = def.trap ? '🖐' : '👉';
+  el.cueText.textContent = def.hint;
+}
+function hideCue(){ el.cue.style.opacity=0; }
+
+/* ---------------------------------------------------------------- rounds */
+let pendingTimer = 0;
+function clearPending(){ if(pendingTimer){ clearTimeout(pendingTimer); pendingTimer=0; } }
+
+function speedScale(){
+  if(G.mode==='A') return 1;
+  if(G.mode==='B'){
+    const prog = 1 - clamp(G.timeLeft/60,0,1);
+    return 1 - 0.42*prog;
+  }
+  return Math.max(0.42, 1 - G.roundCount*0.016);
+}
+
+function beginRound(key){
+  if(!G.running) return;
+  const def = V[key];
+  G.roundCount++;
+  const sp = speedScale();
+  G.round = {key:key, def:def, t0:now(), win:def.win*sp, resolved:false};
+  scene.key = key;
+  scene.def = def;
+  scene.t0 = now();
+  scene.glare = 0;
+  scene.anim = {};
+  G.anger = clamp(G.anger + (def.trap?10:16), 0, 100);
+  setCue(def);
+  updateHud();
+}
+
+function pickRound(){
+  if(!G.running) return;
+  let key;
+  if(G.mode==='A'){
+    key = STAGES[G.stage];
+  } else {
+    const trapChance = G.mode==='B' ? 0.13 : 0.2;
+    if(Math.random() < trapChance) key = Math.random()<0.5?'school':'walker';
+    else key = POOL[Math.floor(Math.random()*POOL.length)];
+  }
+  beginRound(key);
+}
+
+function shake(v){ scene.shake = Math.min(1.4, scene.shake + v); }
+function flashScreen(v){ scene.flash = Math.max(scene.flash, v); }
+
+function scoreRound(){
+  if(G.mode==='A'){ G.cleared = Math.min(10, G.cleared+1); }
+}
+
+function onHit(gesture, acc){
+  const def = G.round.def;
+  G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.hits++;
+  G.anger = clamp(G.anger - 24, 0, 100);
+  bubble(def.good, 'good');
+  vibrate([14, 30, 14]);
+  shake(1);
+  flashScreen(0.5);
+
+  if(G.mode==='B' || G.mode==='C'){
+    const base = G.mode==='B' ? (80 + acc*120) : (60 + acc*90);
+    const comboBonus = 1 + Math.min(G.combo,15)*0.07;
+    const feverMult = G.fever ? 2 : 1;
+    const pts = Math.round(base * comboBonus * feverMult);
+    G.score += pts;
+    floatScore(pts);
+  }
+  if(G.mode==='B' && G.combo>=8 && !G.fever){ startFever(); }
+
+  scoreRound();
+  updateHud();
+
+  scheduleAfterHit(640);
+}
+
+function scheduleAfterHit(delay){
+  const gen = G.gen;
+  if(G.mode==='A'){
+    const wasStage = G.stage;
+    G.pendingAdvance = true;
+    setTimeout(function(){
+      if(!G.running || G.gen!==gen) return;
+      G.pendingAdvance = false;
+      if(G.cleared>=10){ endMode('clear'); return; }
+      G.stage = wasStage+1;
+      nextRound(480);
+    }, delay);
+    G.round = null;
+    hideCue();
+  } else {
+    nextRound(delay > 400 ? 320 : 300);
+  }
+}
+
+function floatScore(pts){
+  const d = document.createElement('div');
+  d.className='honkfx';
+  d.style.cssText += 'top:64%;font-size:20px;color:#ffd23e;text-shadow:0 0 12px rgba(0,0,0,.8)';
+  d.textContent='+'+pts;
+  $('#honkLayer').appendChild(d);
+  setTimeout(function(){ d.remove(); }, 800);
+}
+
+function onFail(reason){
+  const def = G.round.def;
+  G.combo = 0; G.misses++;
+  bubble(reason==='trap' ? def.bad : (reason==='wrong' ? '빵! 엉뚱한 경적이야…' : def.bad), 'bad');
+  vibrate([50, 40, 50]);
+  shake(1.2);
+  scene.flash = 0.2;
+  if(reason==='trap'){ G.complaints++; }
+  if(G.mode==='C'){
+    G.hearts--;
+    updateHud();
+    if(G.hearts<=0){ endMode('dead'); return; }
+  }
+  updateHud();
+  if(G.mode==='A'){
+    G.anger = clamp(G.anger+10,0,100);
+    nextRound(1250);
+  } else {
+    nextRound(420);
+  }
+}
+
+function nextRound(delay){
+  clearPending();
+  G.round = null;
+  hideCue();
+  const gen = G.gen;
+  pendingTimer = setTimeout(function(){
+    if(!G.running || G.gen!==gen) return;
+    pickRound();
+  }, delay);
+}
+
+function startFever(){
+  G.fever = true;
+  G.feverUntil = now() + 8000;
+  el.feverBand.classList.add('on');
+  el.feverTint.classList.add('on');
+  bubble('🔥 극대노 피버타임!!', 'good');
+  flashScreen(1);
+  Sound.ui(980);
+  vibrate([20,40,20,40,60]);
+  updateHud();
+}
+function endFever(){
+  G.fever = false;
+  el.feverBand.classList.remove('on');
+  el.feverTint.classList.remove('on');
+}
+
+/* ---------------------------------------------------------------- input */
+const HOLD_MS = 330;
+const Press = {active:false, t0:0, longFired:false, timer:0};
+const Taps = {times:[], timer:0};
+const hornEl = $('#horn');
+const holdRing = $('#holdRing');
+
+function feedback(kind){
+  G.honks++;
+  G.db = kind==='long' ? rnd(104,114) : (kind==='double' ? rnd(95,105) : rnd(84,93));
+  G.dbPeak = Math.max(G.dbPeak, G.db);
+  honkText(kind);
+  vibrate(kind==='long'?38:(kind==='double'?[12,35,12,35,12]:16));
+  shake(kind==='long'?1.1:0.55);
+  updateHud();
+}
+
+function judge(gesture){
+  const t = now();
+  const r = G.round;
+  if(!G.running || !r || r.resolved){ return; }
+  const el2 = t - r.t0;
+  if(r.def.trap){
+    r.resolved = true;
+    onFail('trap');
+    return;
+  }
+  if(r.def.accept.indexOf(gesture) < 0){
+    r.resolved = true;
+    onFail('wrong');
+    return;
+  }
+  const acc = clamp(1 - el2/r.win, 0, 1);
+  r.resolved = true;
+  onHit(gesture, acc);
+}
+
+function hornDown(e){
+  if(e && e.preventDefault) e.preventDefault();
+  Sound.resume();
+  if(Press.active) return;
+  Press.active = true; Press.t0 = now(); Press.longFired = false;
+  hornEl.classList.add('dn');
+  holdRing.classList.remove('go');
+  void holdRing.offsetWidth;
+  holdRing.classList.add('go');
+  Press.timer = setTimeout(function(){
+    if(Press.active && !Press.longFired){
+      Press.longFired = true;
+      Sound.horn('long');
+      feedback('long');
+      judge('long');
+    }
+  }, HOLD_MS);
+}
+function hornUp(e){
+  if(e && e.preventDefault) e.preventDefault();
+  if(!Press.active) return;
+  Press.active = false;
+  clearTimeout(Press.timer);
+  hornEl.classList.remove('dn');
+  holdRing.classList.remove('go');
+  const dur = now() - Press.t0;
+  if(Press.longFired){ Sound.stopLong(); return; }
+  if(dur >= HOLD_MS*0.82){
+    Sound.horn('long');
+    setTimeout(function(){ Sound.stopLong(); }, 260);
+    feedback('long');
+    judge('long');
+    return;
+  }
+  // tap sequence
+  const t = now();
+  Taps.times = Taps.times.filter(function(x){ return t-x < 420; });
+  Taps.times.push(t);
+  if(Taps.times.length === 1){
+    Sound.horn('tap');
+    feedback('tap');
+    clearTimeout(Taps.timer);
+    Taps.timer = setTimeout(function(){
+      Taps.times = [];
+      judge('tap');
+    }, 340);
+  } else {
+    clearTimeout(Taps.timer);
+    Taps.times = [];
+    Sound.horn('tap2');
+    feedback('double');
+    judge('double');
+  }
+}
+hornEl.addEventListener('pointerdown', hornDown);
+hornEl.addEventListener('pointerup', hornUp);
+hornEl.addEventListener('pointercancel', function(e){
+  if(e && e.preventDefault) e.preventDefault();
+  Press.active=false; clearTimeout(Press.timer);
+  hornEl.classList.remove('dn'); holdRing.classList.remove('go');
+  if(Press.longFired) Sound.stopLong();
+});
+hornEl.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+document.addEventListener('dblclick', function(e){ e.preventDefault(); }, {passive:false});
+
+/* ---------------------------------------------------------------- loop */
+let lastT = 0, rafId = 0;
+function loop(ts){
+  rafId = requestAnimationFrame(loop);
+  const dt = lastT ? Math.min(60, ts-lastT)/1000 : 0.016;
+  lastT = ts;
+
+  if(G.running){
+    scene.scroll += dt * (0.55 + (G.fever?0.5:0));
+    if(G.mode==='B'){
+      G.timeLeft -= dt;
+      if(G.timeLeft<=0){ G.timeLeft=0; updateHud(); endMode('timeup'); }
+      else if(Math.floor(G.timeLeft*2)%4===0) updateHud();
+    }
+    if(G.fever && ts>G.feverUntil) endFever();
+
+    const r = G.round;
+    if(r && !r.resolved && now()-r.t0 > r.win){
+      if(!Taps.timer){
+        r.resolved = true;
+        if(r.def.trap){
+          G.combo++; G.maxCombo=Math.max(G.maxCombo,G.combo); G.hits++;
+          G.anger = clamp(G.anger-18,0,100);
+          bubble(r.def.good,'good'); scoreRound();
+          updateHud();
+          scheduleAfterHit(640);
+        } else {
+          onFail('timeout');
+        }
+      }
+    }
+
+    // decay
+    G.db = Math.max(0, G.db - dt*40);
+    G.anger = Math.max(0, G.anger - dt*1.6);
+    if(Math.floor(ts/120)%3===0) updateHud();
+  }
+  scene.shake = Math.max(0, scene.shake - dt*3.4);
+  scene.flash = Math.max(0, scene.flash - dt*2.6);
+  scene.glare *= 0.98;
+
+  renderScene(ts/1000);
+}
+
+/* ---------------------------------------------------------------- screens */
+function show(id){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.toggle('on', s.id===id); });
+}
+
+function startMode(mode){
+  Sound.resume(); Sound.ui(660);
+  G.gen++;
+  clearPending();
+  clearTimeout(Taps.timer); Taps.times=[];
+  Sound.stopLong();
+  G.mode = mode; G.running = true;
+  G.round=null; G.roundCount=0; G.score=0; G.combo=0; G.maxCombo=0;
+  G.hits=0; G.misses=0; G.honks=0; G.anger=0; G.complaints=0; G.cleared=0; G.stage=0;
+  G.hearts=3; G.timeLeft=60; G.fever=false; G.db=0; G.dbPeak=0;
+  endFever();
+  setModeHud();
+  show('game');
+  setTimeout(function(){
+    resizeCanvas();
+    scene.scroll = 0;
+    scene.shake = 0;
+    updateHud();
+    nextRound(120);
+  }, 40);
+  updateHud();
+}
+
+function rankOf(){
+  const total = G.hits + G.misses;
+  const rate = total ? G.hits/total : 0;
+  const s = G.score + rate*600;
+  if(s>=3000) return 'S';
+  if(s>=2200) return 'A';
+  if(s>=1500) return 'B';
+  if(s>=1000) return 'C';
+  if(s>=600) return 'D';
+  return 'F';
+}
+
+function endMode(reason){
+  if(!G.running) return;
+  G.running = false;
+  G.round = null;
+  clearPending();
+  clearTimeout(Taps.timer); Taps.times=[];
+  Sound.stopLong();
+  hideCue();
+
+  const resBig=$('#resBig'), resTitle=$('#resTitle'), resSub=$('#resSub'),
+        resStats=$('#resStats'), resExtra=$('#resExtra'), resBtns=$('#resBtns');
+  resExtra.innerHTML='';
+  resStats.innerHTML='';
+  const accRate = (G.hits+G.misses) ? Math.round(G.hits/(G.hits+G.misses)*100) : 0;
+
+  if(G.mode==='A'){
+    const pct = G.cleared*10;
+    resBig.textContent = pct+'%';
+    resBig.classList.remove('rank');
+    resTitle.textContent = pct>=100 ? '스트레스 해소율 100% 🎉' : '스트레스 해소율 '+pct+'%';
+    resSub.textContent = pct>=100 ? '출근길 10단계 완전 참교육 성공!' : '아직 빡침이 남아 있다…';
+    resStats.innerHTML =
+      stat('📮 민원', G.complaints+'건') + stat('⚡ 최대 콤보', G.maxCombo) +
+      stat('📢 경적', G.honks+'회') + stat('🎯 성공', G.hits+'/'+(G.hits+G.misses));
+    resBtns.innerHTML =
+      '<button class="btn primary" data-act="again">다시 하기</button>' +
+      '<button class="btn" data-act="menu">메인으로</button>';
+  } else if(G.mode==='B'){
+    const rk = rankOf();
+    resBig.textContent = rk;
+    resBig.classList.add('rank');
+    resTitle.textContent = '최종 랭크 ' + rk;
+    resSub.textContent = rk==='S' ? '당신은 도로 위의 정의 구현자' : (rk==='F' ? '멘탈을 좀 더 단단히…' : '극대노 피버타임을 노려보자');
+    resStats.innerHTML =
+      stat('💯 점수', G.score) + stat('⚡ 최대 콤보', G.maxCombo) +
+      stat('🎯 명중률', accRate+'%') + stat('📢 경적', G.honks+'회');
+    resBtns.innerHTML =
+      '<button class="btn primary" data-act="again">다시 도전</button>' +
+      '<button class="btn" data-act="menu">메인으로</button>';
+  } else {
+    const bestBefore = LS.get('rrh_best', 0);
+    const isBest = G.score > bestBefore;
+    if(isBest) LS.set('rrh_best', G.score);
+    resBig.textContent = G.score;
+    resBig.classList.remove('rank');
+    resTitle.textContent = isBest ? '🏆 최고 기록 갱신!' : '게임 오버';
+    resSub.textContent = '빌런 ' + G.roundCount + '대응 · 최고 기록 ' + Math.max(bestBefore, G.score);
+    resStats.innerHTML =
+      stat('⚡ 최대 콤보', G.maxCombo) + stat('🎯 명중률', accRate+'%') +
+      stat('❤️ 멘탈', G.hearts+'/3') + stat('📢 경적', G.honks+'회');
+    renderRankInput(isBest);
+    resBtns.innerHTML =
+      '<button class="btn primary" data-act="again">다시 도전</button>' +
+      '<button class="btn" data-act="menu">메인으로</button>';
+  }
+  show('result');
+  updateBestLabel();
+}
+function stat(k,v){ return '<div class="rs"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
+
+/* ---- ranking (mode C) ---- */
+function loadRank(){ const v = LS.get('rrh_rank', []); return Array.isArray(v)?v:[]; }
+function saveRank(list){ LS.set('rrh_rank', list.slice(0,10)); }
+function renderRankInput(isBest){
+  const box = $('#resExtra');
+  const lastNick = LS.get('rrh_nick','');
+  box.innerHTML =
+    '<div class="nameRow" style="margin-bottom:8px">' +
+      '<input id="nickInput" maxlength="10" placeholder="닉네임 (최대 10자)" value="'+escapeHtml(lastNick)+'">' +
+      '<button id="nickSave">등록</button>' +
+    '</div>' +
+    '<div class="rankBox"><div class="rankHead"><span>🏁 명예의 전당 TOP 10</span><span>점수</span></div>' +
+      '<div id="rankList"></div></div>';
+  drawRankList();
+  const btn = $('#nickSave');
+  btn.addEventListener('click', function(){
+    const inp = $('#nickInput');
+    let nick = (inp.value||'').trim().slice(0,10);
+    if(!nick) nick = '무명의 운전자';
+    LS.set('rrh_nick', nick);
+    const list = loadRank();
+    list.push({n:nick, s:G.score, d:Date.now(), me:true});
+    list.sort(function(a,b){ return b.s-a.s; });
+    saveRank(list.slice(0,10));
+    drawRankList(nick);
+    Sound.ui(880);
+    btn.textContent='완료';
+    btn.disabled = true;
+  });
+}
+function drawRankList(hl){
+  const list = loadRank();
+  const box = $('#rankList');
+  if(!box) return;
+  if(!list.length){ box.innerHTML = '<div class="rankRow"><span class="nm" style="color:#7c88a0">아직 기록이 없다 — 첫 주인공이 되어라</span></div>'; return; }
+  box.innerHTML = list.map(function(r,i){
+    const mine = hl && r.n===hl;
+    return '<div class="rankRow'+(mine?' me':'')+'"><span class="no">'+(i+1)+'</span>' +
+           '<span class="nm">'+escapeHtml(r.n)+'</span><span class="sc">'+r.s+'</span></div>';
+  }).join('');
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function updateBestLabel(){
+  $('#bestLabel').textContent = '🏆 최고 ' + LS.get('rrh_best',0);
+}
+
+/* ---------------------------------------------------------------- wiring */
+document.querySelectorAll('.mode').forEach(function(b){
+  b.addEventListener('click', function(){ startMode(b.getAttribute('data-mode')); });
+});
+$('#backBtn').addEventListener('click', function(){
+  Sound.stopLong();
+  G.running=false; clearPending(); G.round=null;
+  Sound.ui(520);
+  show('title');
+  updateBestLabel();
+});
+$('#resBtns').addEventListener('click', function(e){
+  const t = e.target.closest('[data-act]');
+  if(!t) return;
+  const act = t.getAttribute('data-act');
+  if(act==='again') startMode(G.mode);
+  if(act==='menu'){ Sound.ui(520); show('title'); updateBestLabel(); }
+});
+
+const muteBtn = $('#muteBtn'), hudMute = $('#hudMute');
+function paintMute(){
+  const m = Sound.isMuted();
+  muteBtn.textContent = m ? '🔇 소리 꺼짐' : '🔊 소리 켜짐';
+  hudMute.textContent = m ? '🔇' : '🔊';
+}
+function toggleMute(){
+  Sound.setMuted(!Sound.isMuted());
+  paintMute();
+  if(!Sound.isMuted()) Sound.ui(760);
+}
+muteBtn.addEventListener('click', toggleMute);
+hudMute.addEventListener('click', function(e){ e.stopPropagation(); toggleMute(); });
+
+document.addEventListener('touchstart', function(){ Sound.resume(); }, {passive:true});
+
+paintMute();
+updateBestLabel();
+resizeCanvas();
+
+/* debug hook (read-only inspection) */
+window.__rrh = {G:G, scene:scene, V:V, version:'1.0'};
+
+rafId = requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
