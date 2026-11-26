@@ -1241,6 +1241,9 @@ function hornDown(e){
   if(e && e.preventDefault) e.preventDefault();
   Sound.resume();
   if(Press.active) return;
+  if(e && e.pointerId !== undefined && hornEl.setPointerCapture){
+    try{ hornEl.setPointerCapture(e.pointerId); }catch(err){}
+  }
   Press.active = true; Press.t0 = now(); Press.longFired = false;
   hornEl.classList.add('dn');
   holdRing.classList.remove('go');
@@ -1293,6 +1296,13 @@ function hornUp(e){
 }
 hornEl.addEventListener('pointerdown', hornDown);
 hornEl.addEventListener('pointerup', hornUp);
+window.addEventListener('pointerup', function(e){ if(Press.active) hornUp(e); }, true);
+window.addEventListener('pointercancel', function(e){
+  if(!Press.active) return;
+  Press.active = false; clearTimeout(Press.timer);
+  hornEl.classList.remove('dn'); holdRing.classList.remove('go');
+  if(Press.longFired) Sound.stopLong();
+}, true);
 hornEl.addEventListener('pointercancel', function(e){
   if(e && e.preventDefault) e.preventDefault();
   Press.active=false; clearTimeout(Press.timer);
