@@ -13,5 +13,9 @@
 <body>
   <div class="phone"><iframe id="f" src="index.html" title="빵빵! 클락션 모바일 미리보기"></iframe></div>
   <p>모바일(390×844) 레이아웃 확인용 페이지.<br>게임 본체는 <a href="index.html" style="color:#4ea1ff">index.html</a>.</p>
+  <script>
+    // 주소의 쿼리(?v=...)를 그대로 게임에 넘겨 캐시된 예전 화면을 피한다
+    if(location.search){ document.getElementById('f').src = 'index.html' + location.search; }
+  </script>
 </body>
 </html>
