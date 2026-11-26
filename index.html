@@ -405,7 +405,7 @@ const Sound = (function(){
     return muted;
   }
   return {resume:resume, horn:horn, stopLong:stopLong, ui:ui, setMuted:setMuted,
-          isMuted:function(){return muted;}};
+          isMuted:function(){return muted;}, state:function(){ return ctx ? ctx.state : 'none'; }};
 })();
 
 function vibrate(p){ if(navigator.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
@@ -1549,7 +1549,7 @@ updateBestLabel();
 resizeCanvas();
 
 /* debug hook (read-only inspection) */
-window.__rrh = {G:G, scene:scene, V:V, version:'1.0'};
+window.__rrh = {G:G, scene:scene, V:V, sound:Sound, version:'1.0'};
 
 rafId = requestAnimationFrame(loop);
 })();
