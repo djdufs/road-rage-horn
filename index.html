@@ -1318,7 +1318,8 @@ function hornUp(e){
   if(Taps.times.length === 1){
     Sound.horn('tap');
     feedback('tap');
-    clearTapPending();
+    // 탭 대기열은 그대로 둔다 — 340ms 안에 한 번 더 톡 누르면 연타빵으로 묶여야 한다
+    if(Taps.timer){ clearTimeout(Taps.timer); Taps.timer = 0; }
     Taps.pending = true;
     Taps.timer = setTimeout(function(){
       Taps.timer = 0; Taps.pending = false; Taps.times = [];
