@@ -875,8 +875,8 @@ function renderScene(t){
   // glare / flash overlays
   if(scene.glare > 0.01){
     const g = ctx2.createRadialGradient(W*0.5, H*0.46, 0, W*0.5, H*0.46, W*0.9);
-    g.addColorStop(0,'rgba(255,255,240,'+(0.5*scene.glare)+')');
-    g.addColorStop(0.4,'rgba(255,255,235,'+(0.18*scene.glare)+')');
+    g.addColorStop(0,'rgba(255,255,240,'+(0.28*scene.glare)+')');
+    g.addColorStop(0.45,'rgba(255,255,235,'+(0.09*scene.glare)+')');
     g.addColorStop(1,'rgba(255,255,235,0)');
     ctx2.fillStyle=g; ctx2.fillRect(0,0,W,H);
   }
